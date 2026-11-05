@@ -20,20 +20,28 @@ log() { echo "[$(date '+%F %T')] $*" >> "$LOG" 2>/dev/null || true; }
 curl -s "${API}/deleteWebhook" >/dev/null 2>&1 || true
 
 send_msg() {
-    local chat_id="$1"; local text="$2"
+    local chat_id="$1"; local text="$2"; local mode="${3:-}"
     [ -z "$chat_id" ] && return 0
-    curl -s -X POST "${API}/sendMessage" \
-        -d "chat_id=${chat_id}" \
-        --data-urlencode "text=${text}" >/dev/null 2>&1 || true
+    if [ -n "$mode" ]; then
+        curl -s -X POST "${API}/sendMessage" \
+            -d "chat_id=${chat_id}" \
+            --data-urlencode "text=${text}" \
+            --data-urlencode "parse_mode=${mode}" >/dev/null 2>&1 || true
+    else
+        curl -s -X POST "${API}/sendMessage" \
+            -d "chat_id=${chat_id}" \
+            --data-urlencode "text=${text}" >/dev/null 2>&1 || true
+    fi
 }
 
 send_menu() {
     local chat_id="$1"; local text="$2"
-    local kb='{"keyboard":[["/status","/traffic"],["/warpon","/warpoff"],["/restartxray","/restarthaproxy"],["/restartvps"],["/add","/del","/genconfig"],["/config","/info"],["/backup"]],"resize_keyboard":true,"one_time_keyboard":false}'
+    local kb='{"keyboard":[["/status","/traffic"],["/warpon","/warpoff"],["/restartxray","/restarthaproxy"],["/restartvps"],["/add","/del","/users"],["/genconfig"],["/backup"],["/help"],["/start"]],"resize_keyboard":true,"one_time_keyboard":false}'
     [ -z "$chat_id" ] && return 0
     curl -s -X POST "${API}/sendMessage" \
         -d "chat_id=${chat_id}" \
         --data-urlencode "text=${text}" \
+        --data-urlencode "parse_mode=HTML" \
         --data-urlencode "reply_markup=${kb}" >/dev/null 2>&1 || true
 }
 
@@ -76,8 +84,33 @@ PY
         [ -z "${CHAT:-}" ] && continue
 
         case "$TEXT" in
+            /menu)
+                TEXT="/start" ;;
+        esac
+
+        case "$TEXT" in
             /start)
-                send_menu "$CHAT" "VPNKu Bot ready. Use the menu or type commands." ;;
+                send_menu "$CHAT" "<b>VPNKu Bot</b> - Panel Manajemen VPN
+
+Selamat datang! Gunakan tombol menu di bawah atau ketik perintah langsung.
+
+<b>Daftar Perintah:</b>
+/status - Status layanan &amp; domain
+/traffic - Pemakaian bandwidth per user
+/warpon - Aktifkan Cloudflare WARP
+/warpoff - Nonaktifkan WARP (direct)
+/restartxray - Restart layanan Xray
+/restarthaproxy - Restart layanan HAProxy
+/restartvps - Reboot VPS
+/add &lt;email&gt; [uuid] - Tambah user baru
+/del &lt;email&gt; - Hapus user
+/users - Daftar user &amp; masa aktif
+/genconfig &lt;email&gt; - Generate share link
+/backup - Backup config Xray
+/help - Penjelasan lengkap tiap fitur
+/menu - Tampilkan ulang menu utama
+
+Ketik /help untuk penjelasan detail." ;;
             /status)
                 send_msg "$CHAT" "$(vpn-status 2>/dev/null)" ;;
             /traffic)
@@ -94,7 +127,7 @@ PY
                 send_msg "$CHAT" "Rebooting VPS..."
                 sleep 2
                 reboot ;;
-            /genconfig)
+            /genconfig|/config)
                 send_msg "$CHAT" "Usage: /genconfig <email>" ;;
             /backup)
                 BAK="/root/vpn-backups/xray-$(date +%Y%m%d-%H%M%S).json"
@@ -104,7 +137,7 @@ PY
                     -F "chat_id=${CHAT}" \
                     -F "document=@${BAK}" >/dev/null 2>&1 || true
                 send_msg "$CHAT" "Xray config backup sent." ;;
-            /genconfig\ *)
+            /genconfig\ *|/config\ *)
                 read -r _ EMAIL <<< "$TEXT"
                 if [ -z "${EMAIL:-}" ]; then
                     send_msg "$CHAT" "Usage: /genconfig <email>"
@@ -120,29 +153,50 @@ PY
                 fi
                 ;;
             /info)
-                DOMAIN=$(cat /etc/vps-data/domain 2>/dev/null || true)
-                send_msg "$CHAT" "Domain: ${DOMAIN}
-Port: 443
-WS: /vmess , /vless
-HU: /vmess-hu , /vless-hu
-gRPC: vmess-grpc , vless-grpc" ;;
-            /config)
-                send_msg "$CHAT" "Usage: /config <email>" ;;
-            /config\ *)
-                read -r _ EMAIL <<< "$TEXT"
-                if [ -z "${EMAIL:-}" ]; then
-                    send_msg "$CHAT" "Usage: /config <email>"
-                else
-                    if gen-config "$EMAIL" >/tmp/genconfig.out 2>&1; then
-                        curl -s -X POST "${API}/sendDocument" \
-                            -F "chat_id=${CHAT}" \
-                            -F "document=@/root/vpn-configs/${EMAIL}.txt" >/dev/null 2>&1 || true
-                        send_msg "$CHAT" "Config generated and sent as file."
-                    else
-                        send_msg "$CHAT" "Failed to generate config."
-                    fi
-                fi
-                ;;
+                send_msg "$CHAT" "$(vpn-status 2>/dev/null)" ;;
+            /help)
+                send_msg "$CHAT" "<b>Bantuan VPNKu Bot</b>
+
+<b>/status</b>
+Menampilkan status layanan (Xray, HAProxy), domain server, port &amp; path yang digunakan.
+
+<b>/traffic</b>
+Menampilkan pemakaian bandwidth (upload/download) per user. Gunakan 'traffic --reset' via CLI untuk reset counter.
+
+<b>/warpon</b>
+Mengaktifkan Cloudflare WARP sebagai outbound default (traffic keluar lewat Cloudflare).
+
+<b>/warpoff</b>
+Menonaktifkan WARP, kembali ke koneksi langsung (direct).
+
+<b>/restartxray</b>
+Me-restart layanan Xray (reload config). Gunakan setelah menambah/menghapus user jika perlu.
+
+<b>/restarthaproxy</b>
+Me-restart HAProxy (reverse proxy). Gunakan jika ada masalah routing/port.
+
+<b>/restartvps</b>
+Me-reboot seluruh VPS. Semua layanan akan restart.
+
+<b>/add &lt;email&gt; [uuid]</b>
+Menambah user baru ke semua protokol/transport (VMess &amp; VLESS x WebSocket, gRPC, HTTPUpgrade) sekaligus. UUID otomatis dibuat jika tidak diisi. Masa aktif 30 hari.
+
+<b>/del &lt;email&gt;</b>
+Menghapus user dari semua protokol/transport sekaligus.
+
+<b>/users</b>
+Menampilkan daftar semua user beserta tanggal kadaluarsa akun.
+
+<b>/genconfig &lt;email&gt;</b>
+Membuat file share link (vmess:// / vless://) untuk user dan mengirimkannya sebagai file.
+
+<b>/backup</b>
+Membuat backup file config Xray dan mengirimkannya sebagai dokumen.
+
+<b>/menu</b>
+Menampilkan ulang menu utama.
+
+Tips: Gunakan tombol menu di bawah untuk akses cepat. Hanya chat ID admin yang diizinkan." "HTML" ;;
             /add)
                 send_msg "$CHAT" "Usage: /add <email> [uuid]" ;;
             /add\ *)
@@ -183,10 +237,49 @@ UUID: $UUID"
                     fi
                 fi
                 ;;
+            /users|/users\ *|/list|/list\ *)
+                RES=$(python3 - 2>/dev/null <<'PY'
+import json, datetime
+CONFIG="/usr/local/etc/xray/config.json"
+try:
+    d=json.load(open(CONFIG))
+except Exception:
+    print("Failed to read Xray config.")
+    raise SystemExit
+seen={}
+for inb in d.get("inbounds", []):
+    for c in (inb.get("settings", {}).get("clients") or []):
+        e=c.get("email")
+        if not e:
+            continue
+        exp=c.get("expiryTime", 0) or 0
+        if e not in seen or exp > seen[e]:
+            seen[e]=exp
+if not seen:
+    print("No users found.")
+else:
+    lines=["Users (%d):" % len(seen)]
+    for e in sorted(seen):
+        exp=seen[e]
+        if exp:
+            try:
+                dt=datetime.datetime.fromtimestamp(exp/1000).strftime("%Y-%m-%d")
+                lines.append("- %s (exp %s)" % (e, dt))
+            except Exception:
+                lines.append("- %s" % e)
+        else:
+            lines.append("- %s" % e)
+    out="\n".join(lines)
+    if len(out) > 3800:
+        out=out[:3800]+"\n... (truncated)"
+    print(out)
+PY
+)
+                send_msg "$CHAT" "${RES:-No users found.}" ;;
             *)
                 # Only reply to non-empty text
                 if [ -n "${TEXT:-}" ]; then
-                    send_msg "$CHAT" "Unknown command. Use /start for help."
+                    send_msg "$CHAT" "Perintah tidak dikenal. Ketik /start atau /help untuk daftar perintah."
                 fi
                 ;;
         esac

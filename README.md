@@ -228,13 +228,14 @@ setup-telegram-bot
 | Command | Function |
 |---|---|
 | `/start` | Help + menu |
+| `/help` | Detailed explanation of every feature |
+| `/menu` | Show the main menu again |
 | `/add <email> [uuid]` | Add user (UUID auto-generated if omitted) |
 | `/del <email>` | Delete user |
+| `/users` (or `/list`) | Show all users (with expiry) |
 | `/genconfig <email>` | Generate share links (file) |
-| `/config <email>` | Generate & send share links (file) |
-| `/info` | Show domain, ports, paths, service names |
 | `/backup` | Send Xray config backup (file) |
-| `/status` | Service status |
+| `/status` | Service status (includes domain, ports, paths) |
 | `/traffic` | Bandwidth usage per user |
 | `/warpon` | Enable WARP |
 | `/warpoff` | Disable WARP (direct) |
