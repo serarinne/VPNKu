@@ -51,10 +51,8 @@ fi
 
 ADDR_JSON=$(echo "$ADDRESSES" | tr ',' '\n' | sed 's/^ *//;s/ *$//' | jq -R . | jq -s .)
 
-sed -i "s/\"secretKey\": \"WARP_PRIVATE_KEY\"/\"secretKey\": \"$PRIVATE_KEY\"/" "$CONFIG_PATH"
-
-if ! jq --argjson addrs "$ADDR_JSON" '
-  (.outbounds[] | select(.tag == "WARP") | .settings.address) = $addrs
+if ! jq --arg key "$PRIVATE_KEY" --argjson addrs "$ADDR_JSON" '
+  .outbounds |= map(if .tag == "WARP" then .settings = (.settings + {"secretKey": $key, "address": $addrs}) else . end)
 ' "$CONFIG_PATH" > "$TMP_FILE"; then
     echo "[ERR] Failed to update configuration."
     exit 1

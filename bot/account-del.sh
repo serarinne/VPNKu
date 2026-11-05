@@ -4,7 +4,7 @@ CONFIG_PATH="/usr/local/etc/xray/config.json"
 
 CLIENT_EMAIL="${1:-}"
 if [ -z "$CLIENT_EMAIL" ]; then
-    echo "[ERR] Email cannot be empty."
+    echo "[ERR] Email cannot be empty." >&2
     echo "0"
     exit 1
 fi

@@ -6,7 +6,7 @@ CLIENT_EMAIL="${1:-}"
 NEW_UUID="${2:-}"
 
 if [ -z "$CLIENT_EMAIL" ]; then
-    echo "[ERR] Email cannot be empty."
+    echo "[ERR] Email cannot be empty." >&2
     echo "0"
     exit 1
 fi
@@ -24,14 +24,14 @@ fi
 EXPIRY_MS=$(( ($(date +%s) + DAYS*24*3600) * 1000 ))
 
 if ! echo "$NEW_UUID" | grep -Eq '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'; then
-    echo "[ERR] Invalid UUID."
+    echo "[ERR] Invalid UUID." >&2
     echo "0"
     exit 1
 fi
 
 CLIENT_EXISTS=$(jq --arg e "$CLIENT_EMAIL" '[.inbounds[].settings.clients[]? | select(.email == $e)] | length' "$CONFIG_PATH")
 if [ "$CLIENT_EXISTS" -gt 0 ]; then
-    echo "[ERR] Client with email '${CLIENT_EMAIL}' already exists."
+    echo "[ERR] Client with email '${CLIENT_EMAIL}' already exists." >&2
     echo "0"
     exit 1
 fi

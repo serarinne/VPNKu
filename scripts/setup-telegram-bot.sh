@@ -33,6 +33,7 @@ After=network.target
 
 [Service]
 Type=simple
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 ExecStart=${BOT_DIR}/telegram-bot.sh
 Restart=always
 RestartSec=5
