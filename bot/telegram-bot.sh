@@ -2,8 +2,10 @@
 # Telegram bot polling loop for VPNKu
 set -uo pipefail
 
-BOT_TOKEN="YOUR_BOT_TOKEN_HERE"
-ADMIN_CHAT_ID="YOUR_CHAT_ID_HERE"
+BOT_TOKEN="$(cat /etc/vps-data/bot-token 2>/dev/null || true)"
+ADMIN_CHAT_ID="$(cat /etc/vps-data/bot-admin 2>/dev/null || true)"
+BOT_TOKEN="${BOT_TOKEN:-YOUR_BOT_TOKEN_HERE}"
+ADMIN_CHAT_ID="${ADMIN_CHAT_ID:-YOUR_CHAT_ID_HERE}"
 
 API="https://api.telegram.org/bot${BOT_TOKEN}"
 OFFSET=0

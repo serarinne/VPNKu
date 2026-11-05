@@ -20,8 +20,10 @@ if [ -z "$BOT_TOKEN" ] || [ -z "$ADMIN_CHAT_ID" ]; then
     exit 1
 fi
 
-sed -i "s/^BOT_TOKEN=.*/BOT_TOKEN=\"${BOT_TOKEN}\"/" "$BOT_DIR/telegram-bot.sh"
-sed -i "s/^ADMIN_CHAT_ID=.*/ADMIN_CHAT_ID=\"${ADMIN_CHAT_ID}\"/" "$BOT_DIR/telegram-bot.sh"
+mkdir -p /etc/vps-data
+printf '%s' "$BOT_TOKEN" > /etc/vps-data/bot-token
+printf '%s' "$ADMIN_CHAT_ID" > /etc/vps-data/bot-admin
+chmod 600 /etc/vps-data/bot-token /etc/vps-data/bot-admin
 chmod 700 "$BOT_DIR/telegram-bot.sh"
 
 cat > /etc/systemd/system/vpnku-bot.service <<EOF
