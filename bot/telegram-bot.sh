@@ -385,12 +385,12 @@ Tap a button to copy a single link." "$KB"
                 ;;
             /users|/users\ *|/list|/list\ *)
                 RES=$(python3 - 2>/dev/null <<'PY'
-import json, datetime
+import json, datetime, html
 CONFIG="/usr/local/etc/xray/config.json"
 try:
     d=json.load(open(CONFIG))
 except Exception:
-    print("Failed to read Xray config.")
+    print("❌ Failed to read Xray config.")
     raise SystemExit
 seen={}
 for inb in d.get("inbounds", []):
@@ -402,30 +402,42 @@ for inb in d.get("inbounds", []):
         if e not in seen or exp > seen[e]:
             seen[e]=exp
 if not seen:
-    print("No users found.")
-else:
-    lines=["Users (%d):" % len(seen)]
-    for e in sorted(seen):
-        exp=seen[e]
-        if exp:
-            try:
-                dt=datetime.datetime.fromtimestamp(exp/1000).strftime("%Y-%m-%d")
-                lines.append("- %s (exp %s)" % (e, dt))
-            except Exception:
-                lines.append("- %s" % e)
-        else:
-            lines.append("- %s" % e)
-    out="\n".join(lines)
-    if len(out) > 3800:
-        out=out[:3800]+"\n... (truncated)"
-    print(out)
+    print("👥 <b>User List</b>\n\n<i>No users registered yet.</i>")
+    raise SystemExit
+now_ms = datetime.datetime.now().timestamp() * 1000
+active = expired = noexp = 0
+rows = []
+for e in sorted(seen):
+    esc = html.escape(str(e))
+    exp = seen[e]
+    if exp:
+        try:
+            dt = datetime.datetime.fromtimestamp(exp / 1000)
+            datestr = dt.strftime("%Y-%m-%d")
+            if exp >= now_ms:
+                status = "🟢"
+                active += 1
+            else:
+                status = "🔴"
+                expired += 1
+            rows.append("%s  <b>%s</b>  <i>exp %s</i>" % (status, esc, datestr))
+        except Exception:
+            rows.append("⚪  <b>%s</b>" % esc)
+            noexp += 1
+    else:
+        rows.append("⚪  <b>%s</b>  <i>no expiry</i>" % esc)
+        noexp += 1
+total = len(seen)
+header = "👥 <b>User List</b>  <code>%d</code> user(s)" % total
+summary = "🟢 %d active   🔴 %d expired   ⚪ %d no-expiry" % (active, expired, noexp)
+out = header + "\n" + summary + "\n\n" + "\n".join(rows)
+if len(out) > 3800:
+    out = out[:3800] + "\n… <i>(truncated)</i>"
+print(out)
 PY
 )
-                OUT="${RES:-No users found.}"
-                ESC=$(printf '%s' "$OUT" | html_escape)
-                send_msg "$CHAT" "<b>${E_USER} User List</b>
-
-<pre>$ESC</pre>" "HTML" ;;
+                OUT="${RES:-👥 No users found.}"
+                send_msg "$CHAT" "$OUT" "HTML" ;;
             CB:*)
                 rest="${TEXT#CB:}"
                 CB_ID="${rest%%:*}"
