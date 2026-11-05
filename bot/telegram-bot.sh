@@ -34,9 +34,13 @@ send_msg() {
     fi
 }
 
+html_escape() {
+    python3 -c 'import sys, html; print(html.escape(sys.stdin.read()), end="")'
+}
+
 send_menu() {
     local chat_id="$1"; local text="$2"
-    local kb='{"keyboard":[["Status Server","Traffic User"],["WARP On","WARP Off"],["Restart Xray","Restart HAProxy"],["Restart VPS"],["Tambah User","Hapus User","Daftar User"],["Config"],["Backup Config"],["Bantuan"],["Menu Utama"]],"resize_keyboard":true,"one_time_keyboard":false}'
+    local kb='{"keyboard":[["Status Server","Traffic User"],["WARP On","WARP Off"],["Restart Xray","Restart HAProxy"],["Restart VPS"],["Add User","Delete User","User List"],["Config"],["Backup Config"],["Help"],["Main Menu"]],"resize_keyboard":true,"one_time_keyboard":false}'
     [ -z "$chat_id" ] && return 0
     curl -s -X POST "${API}/sendMessage" \
         -d "chat_id=${chat_id}" \
@@ -92,53 +96,69 @@ PY
             "Restart Xray") TEXT="/restartxray" ;;
             "Restart HAProxy") TEXT="/restarthaproxy" ;;
             "Restart VPS") TEXT="/restartvps" ;;
-            "Tambah User") TEXT="/add" ;;
-            "Hapus User") TEXT="/del" ;;
-            "Daftar User") TEXT="/users" ;;
+            "Add User") TEXT="/add" ;;
+            "Delete User") TEXT="/del" ;;
+            "User List") TEXT="/users" ;;
             "Config") TEXT="/config" ;;
             "Backup Config") TEXT="/backup" ;;
-            "Bantuan") TEXT="/help" ;;
-            "Menu Utama") TEXT="/start" ;;
+            "Help") TEXT="/help" ;;
+            "Main Menu") TEXT="/start" ;;
             /menu) TEXT="/start" ;;
         esac
 
         case "$TEXT" in
             /start)
-                send_menu "$CHAT" "<b>VPNKu Bot</b> - Panel Manajemen VPN
+                send_menu "$CHAT" "<b>VPNKu Bot</b> - VPN Management Panel
 
-Selamat datang! Gunakan tombol menu di bawah atau ketik perintah langsung.
+Welcome! Use the menu buttons below or type commands directly.
 
-<b>Daftar Perintah:</b>
-/status - Status layanan &amp; domain
-/traffic - Pemakaian bandwidth per user
-/warpon - Aktifkan Cloudflare WARP
-/warpoff - Nonaktifkan WARP (direct)
-/restartxray - Restart layanan Xray
-/restarthaproxy - Restart layanan HAProxy
+<b>Command List:</b>
+/status - Service status &amp; domain
+/traffic - Bandwidth usage per user
+/warpon - Enable Cloudflare WARP
+/warpoff - Disable WARP (direct)
+/restartxray - Restart Xray service
+/restarthaproxy - Restart HAProxy service
 /restartvps - Reboot VPS
-/add &lt;email&gt; [uuid] - Tambah user baru
-/del &lt;email&gt; - Hapus user
-/users - Daftar user &amp; masa aktif
+/add &lt;email&gt; [uuid] - Add new user
+/del &lt;email&gt; - Delete user
+/users - List users &amp; expiry
 /config &lt;email&gt; - Generate share link
-/backup - Backup config Xray
-/help - Penjelasan lengkap tiap fitur
-/menu - Tampilkan ulang menu utama
+/backup - Backup Xray config
+/help - Detailed help for each feature
+/menu - Show main menu again
 
-Ketik /help untuk penjelasan detail." ;;
+Type /help for detailed explanations." ;;
             /status)
-                send_msg "$CHAT" "$(vpn-status 2>/dev/null)" ;;
+                OUT=$(vpn-status 2>/dev/null)
+                ESC=$(printf '%s' "$OUT" | html_escape)
+                send_msg "$CHAT" "<b>Status Server</b>
+
+<pre>$ESC</pre>" "HTML" ;;
             /traffic)
-                send_msg "$CHAT" "$(traffic 2>/dev/null)" ;;
+                OUT=$(traffic 2>/dev/null)
+                ESC=$(printf '%s' "$OUT" | html_escape)
+                send_msg "$CHAT" "<b>Traffic Usage</b>
+
+<pre>$ESC</pre>" "HTML" ;;
             /warpon)
-                send_msg "$CHAT" "$(warp-on 2>/dev/null)" ;;
+                OUT=$(warp-on 2>/dev/null)
+                ESC=$(printf '%s' "$OUT" | html_escape)
+                send_msg "$CHAT" "<b>WARP</b>
+
+<pre>$ESC</pre>" "HTML" ;;
             /warpoff)
-                send_msg "$CHAT" "$(warp-off 2>/dev/null)" ;;
+                OUT=$(warp-off 2>/dev/null)
+                ESC=$(printf '%s' "$OUT" | html_escape)
+                send_msg "$CHAT" "<b>WARP</b>
+
+<pre>$ESC</pre>" "HTML" ;;
             /restartxray)
-                if systemctl restart xray 2>/dev/null; then send_msg "$CHAT" "Xray restarted."; else send_msg "$CHAT" "Failed to restart Xray."; fi ;;
+                if systemctl restart xray 2>/dev/null; then send_msg "$CHAT" "<b>Xray</b> restarted successfully." "HTML"; else send_msg "$CHAT" "<b>Xray</b> failed to restart." "HTML"; fi ;;
             /restarthaproxy)
-                if systemctl restart haproxy 2>/dev/null; then send_msg "$CHAT" "HAProxy restarted."; else send_msg "$CHAT" "Failed to restart HAProxy."; fi ;;
+                if systemctl restart haproxy 2>/dev/null; then send_msg "$CHAT" "<b>HAProxy</b> restarted successfully." "HTML"; else send_msg "$CHAT" "<b>HAProxy</b> failed to restart." "HTML"; fi ;;
             /restartvps)
-                send_msg "$CHAT" "Rebooting VPS..."
+                send_msg "$CHAT" "<b>VPS</b> rebooting..." "HTML"
                 sleep 2
                 reboot ;;
             /genconfig|/config)
@@ -157,60 +177,69 @@ Ketik /help untuk penjelasan detail." ;;
                     send_msg "$CHAT" "Usage: /config <email>"
                 else
                     if gen-config "$EMAIL" >/tmp/genconfig.out 2>&1; then
-                        curl -s -X POST "${API}/sendDocument" \
-                            -F "chat_id=${CHAT}" \
-                            -F "document=@/root/vpn-configs/${EMAIL}.txt" >/dev/null 2>&1 || true
-                        send_msg "$CHAT" "Config generated and sent as file."
+                        if [ -f "/root/vpn-configs/${EMAIL}.txt" ]; then
+                            CFG=$(cat "/root/vpn-configs/${EMAIL}.txt" 2>/dev/null)
+                            ESC=$(printf '%s' "$CFG" | html_escape)
+                            send_msg "$CHAT" "<b>Config for $EMAIL</b>
+
+<pre>$ESC</pre>" "HTML"
+                        else
+                            send_msg "$CHAT" "Config generated."
+                        fi
                     else
                         send_msg "$CHAT" "Failed to generate config."
                     fi
                 fi
                 ;;
             /info)
-                send_msg "$CHAT" "$(vpn-status 2>/dev/null)" ;;
+                OUT=$(vpn-status 2>/dev/null)
+                ESC=$(printf '%s' "$OUT" | html_escape)
+                send_msg "$CHAT" "<b>Status Server</b>
+
+<pre>$ESC</pre>" "HTML" ;;
             /help)
-                send_msg "$CHAT" "<b>Bantuan VPNKu Bot</b>
+                send_msg "$CHAT" "<b>VPNKu Bot Help</b>
 
 <b>/status</b>
-Menampilkan status layanan (Xray, HAProxy), domain server, port &amp; path yang digunakan.
+Shows service status (Xray, HAProxy), server domain, ports &amp; paths used.
 
 <b>/traffic</b>
-Menampilkan pemakaian bandwidth (upload/download) per user. Gunakan 'traffic --reset' via CLI untuk reset counter.
+Shows bandwidth usage (upload/download) per user. Use 'traffic --reset' via CLI to reset counters.
 
 <b>/warpon</b>
-Mengaktifkan Cloudflare WARP sebagai outbound default (traffic keluar lewat Cloudflare).
+Enables Cloudflare WARP as default outbound (traffic exits via Cloudflare).
 
 <b>/warpoff</b>
-Menonaktifkan WARP, kembali ke koneksi langsung (direct).
+Disables WARP, reverts to direct connection.
 
 <b>/restartxray</b>
-Me-restart layanan Xray (reload config). Gunakan setelah menambah/menghapus user jika perlu.
+Restarts Xray service (reloads config). Use after adding/removing users if needed.
 
 <b>/restarthaproxy</b>
-Me-restart HAProxy (reverse proxy). Gunakan jika ada masalah routing/port.
+Restarts HAProxy (reverse proxy). Use if routing/port issues occur.
 
 <b>/restartvps</b>
-Me-reboot seluruh VPS. Semua layanan akan restart.
+Reboots the entire VPS. All services will restart.
 
 <b>/add &lt;email&gt; [uuid]</b>
-Menambah user baru ke semua protokol/transport (VMess &amp; VLESS x WebSocket, gRPC, HTTPUpgrade) sekaligus. UUID otomatis dibuat jika tidak diisi. Masa aktif 30 hari.
+Adds a new user to all protocols/transports (VMess &amp; VLESS x WebSocket, gRPC, HTTPUpgrade) at once. UUID auto-generated if omitted. Account valid for 30 days.
 
 <b>/del &lt;email&gt;</b>
-Menghapus user dari semua protokol/transport sekaligus.
+Removes a user from all protocols/transports at once.
 
 <b>/users</b>
-Menampilkan daftar semua user beserta tanggal kadaluarsa akun.
+Lists all users with account expiry dates.
 
 <b>/config &lt;email&gt;</b>
-Membuat file share link (vmess:// / vless://) untuk user dan mengirimkannya sebagai file.
+Generates share links (vmess:// / vless://) for a user and sends them as text.
 
 <b>/backup</b>
-Membuat backup file config Xray dan mengirimkannya sebagai dokumen.
+Creates a backup of the Xray config file and sends it as a document.
 
 <b>/menu</b>
-Menampilkan ulang menu utama.
+Shows the main menu again.
 
-Tips: Gunakan tombol menu di bawah untuk akses cepat. Hanya chat ID admin yang diizinkan." "HTML" ;;
+Tips: Use the menu buttons below for quick access. Only the admin chat ID is allowed." "HTML" ;;
             /add)
                 send_msg "$CHAT" "Usage: /add <email> [uuid]" ;;
             /add\ *)
@@ -227,9 +256,11 @@ Tips: Gunakan tombol menu di bawah untuk akses cepat. Hanya chat ID admin yang d
 UUID: $UUID"
                         gen-config "$EMAIL" >/tmp/genconfig.out 2>&1 || true
                         if [ -f "/root/vpn-configs/${EMAIL}.txt" ]; then
-                            curl -s -X POST "${API}/sendDocument" \
-                                -F "chat_id=${CHAT}" \
-                                -F "document=@/root/vpn-configs/${EMAIL}.txt" >/dev/null 2>&1 || true
+                            CFG=$(cat "/root/vpn-configs/${EMAIL}.txt" 2>/dev/null)
+                            ESC=$(printf '%s' "$CFG" | html_escape)
+                            send_msg "$CHAT" "<b>Config for $EMAIL</b>
+
+<pre>$ESC</pre>" "HTML"
                         fi
                     else
                         send_msg "$CHAT" "Failed to add user: $EMAIL"
@@ -289,11 +320,15 @@ else:
     print(out)
 PY
 )
-                send_msg "$CHAT" "${RES:-No users found.}" ;;
+                OUT="${RES:-No users found.}"
+                ESC=$(printf '%s' "$OUT" | html_escape)
+                send_msg "$CHAT" "<b>Daftar User</b>
+
+<pre>$ESC</pre>" "HTML" ;;
             *)
                 # Only reply to non-empty text
                 if [ -n "${TEXT:-}" ]; then
-                    send_msg "$CHAT" "Perintah tidak dikenal. Ketik /start atau /help untuk daftar perintah."
+                    send_msg "$CHAT" "Unknown command. Type /start or /help for the command list."
                 fi
                 ;;
         esac
