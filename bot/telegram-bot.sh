@@ -26,10 +26,14 @@ send_menu() {
 
 while true; do
     RESP=$(curl -s "${API}/getUpdates?offset=${OFFSET}&timeout=30" || true)
-    python3 - "$RESP" <<'PY' > /tmp/vpnku_updates.txt || true
+    python3 - "$RESP" <<'PY' > /tmp/vpnku_updates.txt 2>/dev/null || true
 import sys, json
-data = json.loads(sys.argv[1])
-for u in data.get("result", []):
+raw = sys.argv[1] if len(sys.argv) > 1 else ""
+try:
+    data = json.loads(raw) if raw else {}
+except Exception:
+    data = {}
+for u in (data or {}).get("result", []):
     uid = u["update_id"]
     msg = u.get("message", {})
     chat = msg.get("chat", {}).get("id")
