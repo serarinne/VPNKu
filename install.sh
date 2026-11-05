@@ -36,9 +36,9 @@ fetch() {
   else
     url="${url}?_=$(date +%s%N)"
   fi
-  if ! wget -q --inet4-only "$url" -O "$2"; then
+  if ! wget -q --inet4-only --header="Cache-Control: no-cache, no-store, must-revalidate" --header="Pragma: no-cache" "$url" -O "$2"; then
     echo "[ERR] Failed to download $1"
-    wget --inet4-only "$url" -O "$2" || true
+    wget --inet4-only --header="Cache-Control: no-cache, no-store, must-revalidate" --header="Pragma: no-cache" "$url" -O "$2" || true
     exit 1
   fi
 }
