@@ -42,7 +42,10 @@ log "Bot started (admin=${ADMIN_CHAT_ID})"
 while true; do
     RESP=$(curl -s "${API}/getUpdates?offset=${OFFSET}&timeout=30" 2>/dev/null || true)
 
-    printf '%s' "$RESP" | python3 - 2>/dev/null > /tmp/vpnku_updates.txt <<'PY' || true
+    # Pass the response through stdin to python (code given via -c so stdin
+    # is free for the data). Avoids the heredoc/pipe conflict that caused
+    # "printf: write error: Broken pipe".
+    printf '%s' "$RESP" | python3 -c '
 import sys, json
 raw = sys.stdin.read()
 try:
@@ -57,7 +60,7 @@ for u in (data or {}).get("result", []):
     if uid is None:
         continue
     print(f"{uid}|{chat}|{text}")
-PY
+' 2>/dev/null > /tmp/vpnku_updates.txt || true
 
     while IFS='|' read -r UPD CHAT TEXT; do
         [ -z "${UPD:-}" ] && continue
