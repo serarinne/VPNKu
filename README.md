@@ -90,7 +90,7 @@ apt update -y && apt upgrade -y && apt dist-upgrade -y && reboot
 apt-get update && apt-get upgrade -y && apt dist-upgrade -y && update-grub && reboot
 
 # Install VPNKu
-cd /root && wget https://raw.githubusercontent.com/Serarinne/VPNKu/main/install.sh && chmod +x install.sh && ./install.sh
+cd /root && wget https://raw.githubusercontent.com/serarinne/VPNKu/main/install.sh && chmod +x install.sh && ./install.sh
 ```
 
 During installation you will be asked for **Server Name** and **Server Domain**. At the end you may configure the Telegram bot.

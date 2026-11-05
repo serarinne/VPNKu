@@ -36,36 +36,36 @@ fetch() {
 }
 
 step 3 $TOTAL "Xray-Core"
-fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/install/xray.sh" "install/xray.sh"
+fetch "https://raw.githubusercontent.com/serarinne/VPNKu/main/install/xray.sh" "install/xray.sh"
 chmod +x install/xray.sh && ./install/xray.sh
 rm -f install/xray.sh
 
 step 4 $TOTAL "HAProxy"
-fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/install/haproxy.sh" "install/haproxy.sh"
+fetch "https://raw.githubusercontent.com/serarinne/VPNKu/main/install/haproxy.sh" "install/haproxy.sh"
 chmod +x install/haproxy.sh && ./install/haproxy.sh
 rm -f install/haproxy.sh
 
 step 5 $TOTAL "System optimization"
-fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/install/optimize.sh" "install/optimize.sh"
+fetch "https://raw.githubusercontent.com/serarinne/VPNKu/main/install/optimize.sh" "install/optimize.sh"
 chmod +x install/optimize.sh && ./install/optimize.sh
 rm -f install/optimize.sh
 
 step 6 $TOTAL "Downloading commands"
 mkdir -p /usr/bin
-fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/scripts/account-add.sh" "/usr/bin/add-user" && chmod +x /usr/bin/add-user
-fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/scripts/account-del.sh" "/usr/bin/del-user" && chmod +x /usr/bin/del-user
-fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/scripts/warp-setup.sh" "/usr/bin/warp-setup" && chmod +x /usr/bin/warp-setup
-fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/scripts/warp-on.sh" "/usr/bin/warp-on" && chmod +x /usr/bin/warp-on
-fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/scripts/warp-off.sh" "/usr/bin/warp-off" && chmod +x /usr/bin/warp-off
-fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/scripts/status.sh" "/usr/bin/vpn-status" && chmod +x /usr/bin/vpn-status
-fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/scripts/uninstall.sh" "/usr/bin/uninstall-vpn" && chmod +x /usr/bin/uninstall-vpn
-fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/scripts/traffic.sh" "/usr/bin/traffic" && chmod +x /usr/bin/traffic
-fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/scripts/account-expire.sh" "/usr/bin/expire-accounts" && chmod +x /usr/bin/expire-accounts
-fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/scripts/gen-config.sh" "/usr/bin/gen-config" && chmod +x /usr/bin/gen-config
-fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/scripts/setup-telegram-bot.sh" "/usr/bin/setup-telegram-bot" && chmod +x /usr/bin/setup-telegram-bot
-fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/scripts/update.sh" "/usr/bin/update-vpn" && chmod +x /usr/bin/update-vpn
-fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/bot/account-add.sh" "/usr/bin/bot-add-user" && chmod +x /usr/bin/bot-add-user
-fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/bot/account-del.sh" "/usr/bin/bot-del-user" && chmod +x /usr/bin/bot-del-user
+fetch "https://raw.githubusercontent.com/serarinne/VPNKu/main/scripts/account-add.sh" "/usr/bin/add-user" && chmod +x /usr/bin/add-user
+fetch "https://raw.githubusercontent.com/serarinne/VPNKu/main/scripts/account-del.sh" "/usr/bin/del-user" && chmod +x /usr/bin/del-user
+fetch "https://raw.githubusercontent.com/serarinne/VPNKu/main/scripts/warp-setup.sh" "/usr/bin/warp-setup" && chmod +x /usr/bin/warp-setup
+fetch "https://raw.githubusercontent.com/serarinne/VPNKu/main/scripts/warp-on.sh" "/usr/bin/warp-on" && chmod +x /usr/bin/warp-on
+fetch "https://raw.githubusercontent.com/serarinne/VPNKu/main/scripts/warp-off.sh" "/usr/bin/warp-off" && chmod +x /usr/bin/warp-off
+fetch "https://raw.githubusercontent.com/serarinne/VPNKu/main/scripts/status.sh" "/usr/bin/vpn-status" && chmod +x /usr/bin/vpn-status
+fetch "https://raw.githubusercontent.com/serarinne/VPNKu/main/scripts/uninstall.sh" "/usr/bin/uninstall-vpn" && chmod +x /usr/bin/uninstall-vpn
+fetch "https://raw.githubusercontent.com/serarinne/VPNKu/main/scripts/traffic.sh" "/usr/bin/traffic" && chmod +x /usr/bin/traffic
+fetch "https://raw.githubusercontent.com/serarinne/VPNKu/main/scripts/account-expire.sh" "/usr/bin/expire-accounts" && chmod +x /usr/bin/expire-accounts
+fetch "https://raw.githubusercontent.com/serarinne/VPNKu/main/scripts/gen-config.sh" "/usr/bin/gen-config" && chmod +x /usr/bin/gen-config
+fetch "https://raw.githubusercontent.com/serarinne/VPNKu/main/scripts/setup-telegram-bot.sh" "/usr/bin/setup-telegram-bot" && chmod +x /usr/bin/setup-telegram-bot
+fetch "https://raw.githubusercontent.com/serarinne/VPNKu/main/scripts/update.sh" "/usr/bin/update-vpn" && chmod +x /usr/bin/update-vpn
+fetch "https://raw.githubusercontent.com/serarinne/VPNKu/main/bot/account-add.sh" "/usr/bin/bot-add-user" && chmod +x /usr/bin/bot-add-user
+fetch "https://raw.githubusercontent.com/serarinne/VPNKu/main/bot/account-del.sh" "/usr/bin/bot-del-user" && chmod +x /usr/bin/bot-del-user
 
 # Daily expiry cleanup at 00:00
 (crontab -l 2>/dev/null; echo "0 0 * * * /usr/bin/expire-accounts") | sort -u | crontab -

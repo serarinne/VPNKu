@@ -6,7 +6,7 @@ if [ "$(id -u)" -ne 0 ]; then
    exit 1
 fi
 
-BASE="https://raw.githubusercontent.com/Serarinne/VPNKu/main"
+BASE="https://raw.githubusercontent.com/serarinne/VPNKu/main"
 echo "[INFO] Updating VPNKu scripts..."
 
 fetch() {

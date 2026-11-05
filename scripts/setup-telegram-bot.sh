@@ -9,7 +9,7 @@ fi
 BOT_DIR="/opt/vpnku-bot"
 mkdir -p "$BOT_DIR"
 cp /root/VPNKu/bot/telegram-bot.sh "$BOT_DIR/telegram-bot.sh" 2>/dev/null || \
-  wget -q --inet4-only https://raw.githubusercontent.com/Serarinne/VPNKu/main/bot/telegram-bot.sh -O "$BOT_DIR/telegram-bot.sh"
+  wget -q --inet4-only https://raw.githubusercontent.com/serarinne/VPNKu/main/bot/telegram-bot.sh -O "$BOT_DIR/telegram-bot.sh"
 chmod +x "$BOT_DIR/telegram-bot.sh"
 
 read -rp "Telegram Bot Token: " BOT_TOKEN
