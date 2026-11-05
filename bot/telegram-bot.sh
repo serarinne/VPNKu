@@ -40,14 +40,16 @@ send_menu() {
 log "Bot started (admin=${ADMIN_CHAT_ID})"
 
 while true; do
-    RESP=$(curl -s "${API}/getUpdates?offset=${OFFSET}&timeout=30" 2>/dev/null || true)
+    # Fetch updates directly to a file (no pipe/printf involved) to avoid
+    # "Broken pipe" errors entirely.
+    curl -s "${API}/getUpdates?offset=${OFFSET}&timeout=30" -o /tmp/vpnku_raw.txt 2>/dev/null || true
 
-    # Pass the response through stdin to python (code given via -c so stdin
-    # is free for the data). Avoids the heredoc/pipe conflict that caused
-    # "printf: write error: Broken pipe".
-    printf '%s' "$RESP" | python3 -c '
-import sys, json
-raw = sys.stdin.read()
+    python3 - 2>/dev/null > /tmp/vpnku_updates.txt <<'PY' || true
+import json
+try:
+    raw = open("/tmp/vpnku_raw.txt").read()
+except Exception:
+    raw = ""
 try:
     data = json.loads(raw) if raw else {}
 except Exception:
@@ -60,7 +62,7 @@ for u in (data or {}).get("result", []):
     if uid is None:
         continue
     print(f"{uid}|{chat}|{text}")
-' 2>/dev/null > /tmp/vpnku_updates.txt || true
+PY
 
     while IFS='|' read -r UPD CHAT TEXT; do
         [ -z "${UPD:-}" ] && continue
