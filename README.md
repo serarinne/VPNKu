@@ -231,6 +231,8 @@ setup-telegram-bot
 | `/add <email> [uuid]` | Add user (UUID auto-generated if omitted) |
 | `/del <email>` | Delete user |
 | `/genconfig <email>` | Generate share links (file) |
+| `/config <email>` | Generate & send share links (file) |
+| `/info` | Show domain, ports, paths, service names |
 | `/backup` | Send Xray config backup (file) |
 | `/status` | Service status |
 | `/traffic` | Bandwidth usage per user |

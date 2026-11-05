@@ -17,7 +17,7 @@ send_msg() {
 
 send_menu() {
     local chat_id="$1"; local text="$2"
-    local kb='{"keyboard":[["/status","/traffic"],["/warpon","/warpoff"],["/restartxray","/restarthaproxy"],["/restartvps"],["/add","/del","/genconfig"],["/backup"]],"resize_keyboard":true,"one_time_keyboard":false}'
+    local kb='{"keyboard":[["/status","/traffic"],["/warpon","/warpoff"],["/restartxray","/restarthaproxy"],["/restartvps"],["/add","/del","/genconfig"],["/config","/info"],["/backup"]],"resize_keyboard":true,"one_time_keyboard":false}'
     curl -s -X POST "${API}/sendMessage" \
         -d "chat_id=${chat_id}" \
         --data-urlencode "text=${text}" \
@@ -88,6 +88,30 @@ PY
                 ;;
             /add)
                 send_msg "$CHAT" "Usage: /add <email> [uuid]" ;;
+            /info)
+                DOMAIN=$(cat /etc/vps-data/domain)
+                send_msg "$CHAT" "Domain: ${DOMAIN}
+Port: 443
+WS: /vmess , /vless
+HU: /vmess-hu , /vless-hu
+gRPC: vmess-grpc , vless-grpc" ;;
+            /config)
+                send_msg "$CHAT" "Usage: /config <email>" ;;
+            /config\ *)
+                read -r _ EMAIL <<< "$TEXT"
+                if [ -z "$EMAIL" ]; then
+                    send_msg "$CHAT" "Usage: /config <email>"
+                else
+                    if gen-config "$EMAIL" >/tmp/genconfig.out 2>&1; then
+                        curl -s -X POST "${API}/sendDocument" \
+                            -F "chat_id=${CHAT}" \
+                            -F "document=@/root/vpn-configs/${EMAIL}.txt" >/dev/null
+                        send_msg "$CHAT" "Config generated and sent as file."
+                    else
+                        send_msg "$CHAT" "Failed to generate config."
+                    fi
+                fi
+                ;;
             /add\ *)
                 read -r _ EMAIL UUID <<< "$TEXT"
                 if [ -z "$EMAIL" ]; then
@@ -100,6 +124,12 @@ PY
                     if [ "$RES" = "1" ]; then
                         send_msg "$CHAT" "User added: $EMAIL
 UUID: $UUID"
+                        gen-config "$EMAIL" >/tmp/genconfig.out 2>&1 || true
+                        if [ -f "/root/vpn-configs/${EMAIL}.txt" ]; then
+                            curl -s -X POST "${API}/sendDocument" \
+                                -F "chat_id=${CHAT}" \
+                                -F "document=@/root/vpn-configs/${EMAIL}.txt" >/dev/null
+                        fi
                     else
                         send_msg "$CHAT" "Failed to add user: $EMAIL"
                     fi
