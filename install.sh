@@ -29,6 +29,7 @@ openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
   -subj "/C=ID/ST=Jawa Barat/L=Bogor/O=Serarinne/OU=VPN/CN=${SERVER_DOMAIN}"
 
 fetch() {
+  mkdir -p "$(dirname "$2")"
   if ! wget -q --inet4-only "$1" -O "$2"; then
     echo "[ERR] Failed to download $1"
     exit 1
