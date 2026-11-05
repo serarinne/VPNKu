@@ -14,7 +14,7 @@ step 1 $TOTAL "Installing packages"
 apt-get remove --purge nginx* nginx-common* nginx-full* apache2* ufw* firewalld* exim4* -y >/dev/null 2>&1 || true
 apt autoremove -y >/dev/null 2>&1 || true
 apt update -y
-apt install -y sudo dpkg psmisc socat jq ruby wondershaper python3 tmux nmap bzip2 gzip coreutils screen rsyslog iftop htop zip unzip wget vim net-tools curl nano sed gnupg gnupg1 bc apt-transport-https build-essential gcc g++ automake make autoconf perl m4 dos2unix libreadline-dev zlib1g-dev libssl-dev dirmngr libxml-parser-perl neofetch git lsof iptables iptables-persistent screenfetch openssl easy-rsa fail2ban vnstat libsqlite3-dev cron bash-completion ntpdate xz-utils gnupg2 dnsutils lsb-release chrony lolcat ufw
+DEBIAN_FRONTEND=noninteractive apt install -y sudo dpkg psmisc socat jq ruby wondershaper python3 tmux nmap bzip2 gzip coreutils screen rsyslog iftop htop zip unzip wget vim net-tools curl nano sed gnupg gnupg1 bc apt-transport-https build-essential gcc g++ automake make autoconf perl m4 dos2unix libreadline-dev zlib1g-dev libssl-dev dirmngr libxml-parser-perl neofetch git lsof iptables iptables-persistent screenfetch openssl easy-rsa fail2ban vnstat libsqlite3-dev cron bash-completion ntpdate xz-utils gnupg2 dnsutils lsb-release chrony lolcat
 
 step 2 $TOTAL "Server setup"
 read -rp "Server Name        : " SERVER_NAME
@@ -71,13 +71,25 @@ fetch "https://raw.githubusercontent.com/serarinne/VPNKu/main/bot/account-del.sh
 (crontab -l 2>/dev/null; echo "0 0 * * * /usr/bin/expire-accounts") | sort -u | crontab -
 
 step 7 $TOTAL "Firewall"
-ufw --force reset >/dev/null 2>&1 || true
-ufw default deny incoming >/dev/null 2>&1 || true
-ufw default allow outgoing >/dev/null 2>&1 || true
-ufw allow 22/tcp >/dev/null 2>&1 || true
-ufw allow 80/tcp >/dev/null 2>&1 || true
-ufw allow 443/tcp >/dev/null 2>&1 || true
-ufw --force enable >/dev/null 2>&1 || true
+# Use iptables directly (ufw conflicts with iptables-persistent)
+iptables -F
+iptables -X
+iptables -t nat -F
+iptables -t nat -X
+iptables -t mangle -F
+iptables -t mangle -X
+iptables -P INPUT ACCEPT
+iptables -P FORWARD DROP
+iptables -P OUTPUT ACCEPT
+iptables -A INPUT -i lo -j ACCEPT
+iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+iptables -P INPUT DROP
+mkdir -p /etc/iptables
+iptables-save > /etc/iptables/rules.v4 2>/dev/null || true
+systemctl enable netfilter-persistent >/dev/null 2>&1 || true
 
 step 8 $TOTAL "Done"
 echo "[OK] Installation complete. Reboot to apply."

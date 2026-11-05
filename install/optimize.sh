@@ -46,7 +46,7 @@ echo "[OK] BBR & TCP optimization complete!"
 echo ""
 echo "[INFO] Starting firewall configuration..."
 
-apt-get install -y iptables-persistent >/dev/null 2>&1
+DEBIAN_FRONTEND=noninteractive apt-get install -y iptables-persistent >/dev/null 2>&1
 
 iptables -F OUTPUT 2>/dev/null || true
 iptables -A OUTPUT -m string --string "get_peers" --algo bm -j DROP 2>/dev/null || true
