@@ -226,12 +226,11 @@ Type /help for detailed explanations." ;;
                         if [ -f "/root/vpn-configs/${EMAIL}.txt" ]; then
                             CFG=$(cat "/root/vpn-configs/${EMAIL}.txt" 2>/dev/null)
                             ESC=$(printf '%s' "$CFG" | html_escape)
-                            KB=$(build_kb "/root/vpn-configs/${EMAIL}.txt")
-                            send_inline "$CHAT" "<b>${E_CONFIG} Config for $EMAIL</b>
-
+                            send_msg "$CHAT" "<b>${E_CONFIG} Config for $EMAIL</b>
+ 
 <pre>$ESC</pre>
-
-Tap a button to copy each link." "$KB"
+ 
+Copy each link from the text above." "HTML"
                         else
                             send_msg "$CHAT" "Config generated."
                         fi
@@ -307,12 +306,11 @@ UUID: $UUID"
                         if [ -f "/root/vpn-configs/${EMAIL}.txt" ]; then
                             CFG=$(cat "/root/vpn-configs/${EMAIL}.txt" 2>/dev/null)
                             ESC=$(printf '%s' "$CFG" | html_escape)
-                            KB=$(build_kb "/root/vpn-configs/${EMAIL}.txt")
-                            send_inline "$CHAT" "<b>${E_CONFIG} Config for $EMAIL</b>
+                            send_msg "$CHAT" "<b>${E_CONFIG} Config for $EMAIL</b>
 
 <pre>$ESC</pre>
 
-Tap a button to copy each link." "$KB"
+Copy each link from the text above." "HTML"
                         fi
                     else
                         send_msg "$CHAT" "${E_ERR} Failed to add user: $EMAIL"
