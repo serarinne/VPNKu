@@ -226,10 +226,52 @@ Welcome! Use the menu buttons below or type commands directly.
 Type /help for detailed explanations." ;;
             /status)
                 OUT=$(vpn-status 2>/dev/null)
-                ESC=$(printf '%s' "$OUT" | html_escape)
+                MSG=$(printf '%s' "$OUT" | python3 - 2>/dev/null <<'PY'
+import sys, html
+lines = sys.stdin.read().splitlines()
+out = []
+info = False
+for ln in lines:
+    s = ln.strip()
+    if not s or s.startswith("===") or s.startswith("---"):
+        if s.lower().startswith("--- info"):
+            out.append("")
+            out.append("🌐 <b>Info</b>")
+            info = True
+        continue
+    if ":" in s:
+        key, val = s.split(":", 1)
+        key = key.strip(); val = val.strip()
+        low = key.lower()
+        if low == "xray service":
+            em = "🟢" if val.lower() == "active" else "🔴"
+            out.append("%s <b>Xray:</b> %s" % (em, html.escape(val)))
+        elif low == "haproxy service":
+            em = "🟢" if val.lower() == "active" else "🔴"
+            out.append("%s <b>HAProxy:</b> %s" % (em, html.escape(val)))
+        elif low == "warp route":
+            out.append("🌐 <b>WARP route:</b> %s" % html.escape(val))
+        elif low == "unique clients":
+            out.append("👥 <b>Unique clients:</b> %s" % html.escape(val))
+        elif low == "listening ports":
+            out.append("🔌 <b>Listening ports:</b> %s" % html.escape(val))
+        elif low == "domain":
+            out.append("• <b>Domain:</b> %s" % html.escape(val))
+        elif low == "port":
+            out.append("• <b>Port:</b> %s" % html.escape(val))
+        elif low in ("ws", "hu", "grpc"):
+            out.append("• <b>%s:</b> %s" % (html.escape(key), html.escape(val)))
+        else:
+            out.append("• <b>%s:</b> %s" % (html.escape(key), html.escape(val)))
+    else:
+        out.append(html.escape(s))
+print("\n".join(out).strip())
+PY
+)
+                [ -z "${MSG:-}" ] && MSG=$(printf '%s' "$OUT" | html_escape)
                 send_msg "$CHAT" "<b>${E_STATUS} Status Server</b>
 
-<pre>$ESC</pre>" "HTML" ;;
+${MSG}" "HTML" ;;
             /traffic)
                 OUT=$(traffic 2>/dev/null)
                 ESC=$(printf '%s' "$OUT" | html_escape)
@@ -239,15 +281,15 @@ Type /help for detailed explanations." ;;
             /warpon)
                 OUT=$(warp-on 2>/dev/null)
                 ESC=$(printf '%s' "$OUT" | html_escape)
-                send_msg "$CHAT" "<b>${E_WARP} WARP</b>
+                send_msg "$CHAT" "${E_WARP} <b>WARP</b>
 
-<pre>$ESC</pre>" "HTML" ;;
+${ESC}" "HTML" ;;
             /warpoff)
                 OUT=$(warp-off 2>/dev/null)
                 ESC=$(printf '%s' "$OUT" | html_escape)
-                send_msg "$CHAT" "<b>${E_WARP} WARP</b>
+                send_msg "$CHAT" "${E_WARP} <b>WARP</b>
 
-<pre>$ESC</pre>" "HTML" ;;
+${ESC}" "HTML" ;;
             /restartxray)
                 if systemctl restart xray 2>/dev/null; then send_msg "$CHAT" "${E_OK} <b>Xray</b> restarted successfully." "HTML"; else send_msg "$CHAT" "${E_ERR} <b>Xray</b> failed to restart." "HTML"; fi ;;
             /restarthaproxy)
@@ -291,10 +333,48 @@ Tap a button to copy a single link." "$KB"
                 ;;
             /info)
                 OUT=$(vpn-status 2>/dev/null)
-                ESC=$(printf '%s' "$OUT" | html_escape)
+                MSG=$(printf '%s' "$OUT" | python3 - 2>/dev/null <<'PY'
+import sys, html
+lines = sys.stdin.read().splitlines()
+out = []
+for ln in lines:
+    s = ln.strip()
+    if not s or s.startswith("===") or s.startswith("---"):
+        if s.lower().startswith("--- info"):
+            out.append("")
+            out.append("🌐 <b>Info</b>")
+        continue
+    if ":" in s:
+        key, val = s.split(":", 1)
+        key = key.strip(); val = val.strip()
+        low = key.lower()
+        if low == "xray service":
+            em = "🟢" if val.lower() == "active" else "🔴"
+            out.append("%s <b>Xray:</b> %s" % (em, html.escape(val)))
+        elif low == "haproxy service":
+            em = "🟢" if val.lower() == "active" else "🔴"
+            out.append("%s <b>HAProxy:</b> %s" % (em, html.escape(val)))
+        elif low == "warp route":
+            out.append("🌐 <b>WARP route:</b> %s" % html.escape(val))
+        elif low == "unique clients":
+            out.append("👥 <b>Unique clients:</b> %s" % html.escape(val))
+        elif low == "listening ports":
+            out.append("🔌 <b>Listening ports:</b> %s" % html.escape(val))
+        elif low == "domain":
+            out.append("• <b>Domain:</b> %s" % html.escape(val))
+        elif low == "port":
+            out.append("• <b>Port:</b> %s" % html.escape(val))
+        else:
+            out.append("• <b>%s:</b> %s" % (html.escape(key), html.escape(val)))
+    else:
+        out.append(html.escape(s))
+print("\n".join(out).strip())
+PY
+)
+                [ -z "${MSG:-}" ] && MSG=$(printf '%s' "$OUT" | html_escape)
                 send_msg "$CHAT" "<b>${E_STATUS} Status Server</b>
 
-<pre>$ESC</pre>" "HTML" ;;
+${MSG}" "HTML" ;;
             /help)
                 send_msg "$CHAT" "<b>${E_HELP} VPNKu Bot Help</b>
 
