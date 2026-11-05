@@ -37,9 +37,9 @@ for u in data.get("result", []):
     print(f"{uid}|{chat}|{text}")
 PY
 
-    while IFS='|' read -r UID CHAT TEXT; do
-        [ -z "$UID" ] && continue
-        OFFSET=$((UID + 1))
+    while IFS='|' read -r UPD CHAT TEXT; do
+        [ -z "$UPD" ] && continue
+        OFFSET=$((UPD + 1))
         [ "$CHAT" != "$ADMIN_CHAT_ID" ] && continue
 
         case "$TEXT" in
