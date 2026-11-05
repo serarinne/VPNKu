@@ -30,7 +30,13 @@ openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
 
 fetch() {
   mkdir -p "$(dirname "$2")"
-  if ! wget -q --inet4-only "$1" -O "$2"; then
+  local url="$1"
+  if [[ "$url" == *\?* ]]; then
+    url="${url}&_=$(date +%s%N)"
+  else
+    url="${url}?_=$(date +%s%N)"
+  fi
+  if ! wget -q --inet4-only --no-cache "$url" -O "$2"; then
     echo "[ERR] Failed to download $1"
     exit 1
   fi

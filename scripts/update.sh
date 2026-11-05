@@ -10,7 +10,13 @@ BASE="https://raw.githubusercontent.com/serarinne/VPNKu/main"
 echo "[INFO] Updating VPNKu scripts..."
 
 fetch() {
-  if ! wget -q --inet4-only "$1" -O "$2"; then
+  local url="$1"
+  if [[ "$url" == *\?* ]]; then
+    url="${url}&_=$(date +%s%N)"
+  else
+    url="${url}?_=$(date +%s%N)"
+  fi
+  if ! wget -q --inet4-only --no-cache "$url" -O "$2"; then
     echo "[ERR] Failed to download $1"
     return 1
   fi
