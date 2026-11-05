@@ -40,6 +40,22 @@ html_escape() {
     python3 -c 'import sys, html; print(html.escape(sys.stdin.read()), end="")'
 }
 
+format_cfg_html() {
+    python3 - "$1" <<'PY'
+import sys, html
+path = sys.argv[1]
+out = []
+for raw in open(path, encoding="utf-8", errors="replace"):
+    line = raw.rstrip("\n")
+    s = line.strip()
+    if s.startswith("vmess://") or s.startswith("vless://"):
+        out.append("<code>" + html.escape(s) + "</code>")
+    else:
+        out.append(html.escape(line))
+print("\n".join(out))
+PY
+}
+
 build_kb() {
     python3 - "$1" <<'PY'
 import json, sys
@@ -224,13 +240,12 @@ Type /help for detailed explanations." ;;
                 else
                     if gen-config "$EMAIL" >/tmp/genconfig.out 2>&1; then
                         if [ -f "/root/vpn-configs/${EMAIL}.txt" ]; then
-                            CFG=$(cat "/root/vpn-configs/${EMAIL}.txt" 2>/dev/null)
-                            ESC=$(printf '%s' "$CFG" | html_escape)
+                            ESC=$(format_cfg_html "/root/vpn-configs/${EMAIL}.txt")
                             send_msg "$CHAT" "<b>${E_CONFIG} Config for $EMAIL</b>
  
-<pre>$ESC</pre>
+$ESC
  
-Copy each link from the text above." "HTML"
+Tap the copy icon next to each link." "HTML"
                         else
                             send_msg "$CHAT" "Config generated."
                         fi
@@ -304,13 +319,12 @@ Tips: Use the menu buttons below for quick access. Only the admin chat ID is all
 UUID: $UUID"
                         gen-config "$EMAIL" >/tmp/genconfig.out 2>&1 || true
                         if [ -f "/root/vpn-configs/${EMAIL}.txt" ]; then
-                            CFG=$(cat "/root/vpn-configs/${EMAIL}.txt" 2>/dev/null)
-                            ESC=$(printf '%s' "$CFG" | html_escape)
+                            ESC=$(format_cfg_html "/root/vpn-configs/${EMAIL}.txt")
                             send_msg "$CHAT" "<b>${E_CONFIG} Config for $EMAIL</b>
 
-<pre>$ESC</pre>
+$ESC
 
-Copy each link from the text above." "HTML"
+Tap the copy icon next to each link." "HTML"
                         fi
                     else
                         send_msg "$CHAT" "${E_ERR} Failed to add user: $EMAIL"
