@@ -220,8 +220,12 @@ Type /help for detailed explanations." ;;
                 else
                     if gen-config "$EMAIL" >/tmp/genconfig.out 2>&1; then
                         if [ -f "/root/vpn-configs/${EMAIL}.txt" ]; then
+                            CFG=$(cat "/root/vpn-configs/${EMAIL}.txt" 2>/dev/null)
+                            ESC=$(printf '%s' "$CFG" | html_escape)
                             KB=$(build_kb "/root/vpn-configs/${EMAIL}.txt")
                             send_inline "$CHAT" "<b>${E_CONFIG} Config for $EMAIL</b>
+
+<pre>$ESC</pre>
 
 Tap a button to copy each link." "$KB"
                         else
@@ -297,8 +301,12 @@ Tips: Use the menu buttons below for quick access. Only the admin chat ID is all
 UUID: $UUID"
                         gen-config "$EMAIL" >/tmp/genconfig.out 2>&1 || true
                         if [ -f "/root/vpn-configs/${EMAIL}.txt" ]; then
+                            CFG=$(cat "/root/vpn-configs/${EMAIL}.txt" 2>/dev/null)
+                            ESC=$(printf '%s' "$CFG" | html_escape)
                             KB=$(build_kb "/root/vpn-configs/${EMAIL}.txt")
                             send_inline "$CHAT" "<b>${E_CONFIG} Config for $EMAIL</b>
+
+<pre>$ESC</pre>
 
 Tap a button to copy each link." "$KB"
                         fi
