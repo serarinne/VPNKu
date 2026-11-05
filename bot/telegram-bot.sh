@@ -38,6 +38,33 @@ html_escape() {
     python3 -c 'import sys, html; print(html.escape(sys.stdin.read()), end="")'
 }
 
+build_kb() {
+    python3 - "$1" <<'PY'
+import json, sys
+path = sys.argv[1]
+label = ""
+rows = []
+for raw in open(path, encoding="utf-8", errors="replace"):
+    line = raw.strip()
+    if line.startswith("---") and line.endswith("---"):
+        label = line.strip("- ").strip()
+        continue
+    if line.startswith("vmess://") or line.startswith("vless://"):
+        rows.append([{"text": "Copy " + label, "copy_text": {"text": line}}])
+print(json.dumps({"inline_keyboard": rows}))
+PY
+}
+
+send_inline() {
+    local chat_id="$1"; local text="$2"; local kb="$3"
+    [ -z "$chat_id" ] && return 0
+    curl -s -X POST "${API}/sendMessage" \
+        -d "chat_id=${chat_id}" \
+        --data-urlencode "text=${text}" \
+        --data-urlencode "parse_mode=HTML" \
+        --data-urlencode "reply_markup=${kb}" >/dev/null 2>&1 || true
+}
+
 send_menu() {
     local chat_id="$1"; local text="$2"
     local kb='{"keyboard":[["Status Server","Traffic User"],["WARP On","WARP Off"],["Restart Xray","Restart HAProxy"],["Restart VPS"],["Add User","Delete User","User List"],["Config"],["Backup Config"],["Help"],["Main Menu"]],"resize_keyboard":true,"one_time_keyboard":false}'
@@ -50,6 +77,21 @@ send_menu() {
 }
 
 log "Bot started (admin=${ADMIN_CHAT_ID})"
+
+# Emoji constants (ANSI-C quoting keeps source ASCII-safe)
+E_OK=$'\U2705'
+E_ERR=$'\U274C'
+E_STATUS=$'\U1F4CA'
+E_TRAFFIC=$'\U1F4C8'
+E_WARP=$'\U1F310'
+E_RESTART=$'\U1F504'
+E_REBOOT=$'\U1F501'
+E_USER=$'\U1F464'
+E_CONFIG=$'\U1F4C4'
+E_BACKUP=$'\U1F4BE'
+E_HELP=$'\U2753'
+E_MENU=$'\U1F4CB'
+E_ROCKET=$'\U1F680'
 
 while true; do
     # Fetch updates directly to a file (no pipe/printf involved) to avoid
@@ -108,57 +150,57 @@ PY
 
         case "$TEXT" in
             /start)
-                send_menu "$CHAT" "<b>VPNKu Bot</b> - VPN Management Panel
+                send_menu "$CHAT" "<b>${E_ROCKET} VPNKu Bot</b> - VPN Management Panel
 
 Welcome! Use the menu buttons below or type commands directly.
 
-<b>Command List:</b>
-/status - Service status &amp; domain
-/traffic - Bandwidth usage per user
-/warpon - Enable Cloudflare WARP
-/warpoff - Disable WARP (direct)
-/restartxray - Restart Xray service
-/restarthaproxy - Restart HAProxy service
-/restartvps - Reboot VPS
-/add &lt;email&gt; [uuid] - Add new user
-/del &lt;email&gt; - Delete user
-/users - List users &amp; expiry
-/config &lt;email&gt; - Generate share link
-/backup - Backup Xray config
-/help - Detailed help for each feature
-/menu - Show main menu again
+<b>${E_MENU} Command List:</b>
+/status - ${E_STATUS} Service status &amp; domain
+/traffic - ${E_TRAFFIC} Bandwidth usage per user
+/warpon - ${E_WARP} Enable Cloudflare WARP
+/warpoff - ${E_WARP} Disable WARP (direct)
+/restartxray - ${E_RESTART} Restart Xray service
+/restarthaproxy - ${E_RESTART} Restart HAProxy service
+/restartvps - ${E_REBOOT} Reboot VPS
+/add &lt;email&gt; [uuid] - ${E_USER} Add new user
+/del &lt;email&gt; - ${E_USER} Delete user
+/users - ${E_USER} List users &amp; expiry
+/config &lt;email&gt; - ${E_CONFIG} Generate share link
+/backup - ${E_BACKUP} Backup Xray config
+/help - ${E_HELP} Detailed help for each feature
+/menu - ${E_MENU} Show main menu again
 
 Type /help for detailed explanations." ;;
             /status)
                 OUT=$(vpn-status 2>/dev/null)
                 ESC=$(printf '%s' "$OUT" | html_escape)
-                send_msg "$CHAT" "<b>Status Server</b>
+                send_msg "$CHAT" "<b>${E_STATUS} Status Server</b>
 
 <pre>$ESC</pre>" "HTML" ;;
             /traffic)
                 OUT=$(traffic 2>/dev/null)
                 ESC=$(printf '%s' "$OUT" | html_escape)
-                send_msg "$CHAT" "<b>Traffic Usage</b>
+                send_msg "$CHAT" "<b>${E_TRAFFIC} Traffic Usage</b>
 
 <pre>$ESC</pre>" "HTML" ;;
             /warpon)
                 OUT=$(warp-on 2>/dev/null)
                 ESC=$(printf '%s' "$OUT" | html_escape)
-                send_msg "$CHAT" "<b>WARP</b>
+                send_msg "$CHAT" "<b>${E_WARP} WARP</b>
 
 <pre>$ESC</pre>" "HTML" ;;
             /warpoff)
                 OUT=$(warp-off 2>/dev/null)
                 ESC=$(printf '%s' "$OUT" | html_escape)
-                send_msg "$CHAT" "<b>WARP</b>
+                send_msg "$CHAT" "<b>${E_WARP} WARP</b>
 
 <pre>$ESC</pre>" "HTML" ;;
             /restartxray)
-                if systemctl restart xray 2>/dev/null; then send_msg "$CHAT" "<b>Xray</b> restarted successfully." "HTML"; else send_msg "$CHAT" "<b>Xray</b> failed to restart." "HTML"; fi ;;
+                if systemctl restart xray 2>/dev/null; then send_msg "$CHAT" "${E_OK} <b>Xray</b> restarted successfully." "HTML"; else send_msg "$CHAT" "${E_ERR} <b>Xray</b> failed to restart." "HTML"; fi ;;
             /restarthaproxy)
-                if systemctl restart haproxy 2>/dev/null; then send_msg "$CHAT" "<b>HAProxy</b> restarted successfully." "HTML"; else send_msg "$CHAT" "<b>HAProxy</b> failed to restart." "HTML"; fi ;;
+                if systemctl restart haproxy 2>/dev/null; then send_msg "$CHAT" "${E_OK} <b>HAProxy</b> restarted successfully." "HTML"; else send_msg "$CHAT" "${E_ERR} <b>HAProxy</b> failed to restart." "HTML"; fi ;;
             /restartvps)
-                send_msg "$CHAT" "<b>VPS</b> rebooting..." "HTML"
+                send_msg "$CHAT" "${E_REBOOT} <b>VPS</b> rebooting..." "HTML"
                 sleep 2
                 reboot ;;
             /genconfig|/config)
@@ -178,27 +220,26 @@ Type /help for detailed explanations." ;;
                 else
                     if gen-config "$EMAIL" >/tmp/genconfig.out 2>&1; then
                         if [ -f "/root/vpn-configs/${EMAIL}.txt" ]; then
-                            CFG=$(cat "/root/vpn-configs/${EMAIL}.txt" 2>/dev/null)
-                            ESC=$(printf '%s' "$CFG" | html_escape)
-                            send_msg "$CHAT" "<b>Config for $EMAIL</b>
+                            KB=$(build_kb "/root/vpn-configs/${EMAIL}.txt")
+                            send_inline "$CHAT" "<b>${E_CONFIG} Config for $EMAIL</b>
 
-<pre>$ESC</pre>" "HTML"
+Tap a button to copy each link." "$KB"
                         else
                             send_msg "$CHAT" "Config generated."
                         fi
                     else
-                        send_msg "$CHAT" "Failed to generate config."
+                        send_msg "$CHAT" "${E_ERR} Failed to generate config."
                     fi
                 fi
                 ;;
             /info)
                 OUT=$(vpn-status 2>/dev/null)
                 ESC=$(printf '%s' "$OUT" | html_escape)
-                send_msg "$CHAT" "<b>Status Server</b>
+                send_msg "$CHAT" "<b>${E_STATUS} Status Server</b>
 
 <pre>$ESC</pre>" "HTML" ;;
             /help)
-                send_msg "$CHAT" "<b>VPNKu Bot Help</b>
+                send_msg "$CHAT" "<b>${E_HELP} VPNKu Bot Help</b>
 
 <b>/status</b>
 Shows service status (Xray, HAProxy), server domain, ports &amp; paths used.
@@ -252,18 +293,17 @@ Tips: Use the menu buttons below for quick access. Only the admin chat ID is all
                     fi
                     RES=$(bot-add-user "$EMAIL" "$UUID" 2>/dev/null || true)
                     if [ "$RES" = "1" ]; then
-                        send_msg "$CHAT" "User added: $EMAIL
+                        send_msg "$CHAT" "${E_OK} User added: $EMAIL
 UUID: $UUID"
                         gen-config "$EMAIL" >/tmp/genconfig.out 2>&1 || true
                         if [ -f "/root/vpn-configs/${EMAIL}.txt" ]; then
-                            CFG=$(cat "/root/vpn-configs/${EMAIL}.txt" 2>/dev/null)
-                            ESC=$(printf '%s' "$CFG" | html_escape)
-                            send_msg "$CHAT" "<b>Config for $EMAIL</b>
+                            KB=$(build_kb "/root/vpn-configs/${EMAIL}.txt")
+                            send_inline "$CHAT" "<b>${E_CONFIG} Config for $EMAIL</b>
 
-<pre>$ESC</pre>" "HTML"
+Tap a button to copy each link." "$KB"
                         fi
                     else
-                        send_msg "$CHAT" "Failed to add user: $EMAIL"
+                        send_msg "$CHAT" "${E_ERR} Failed to add user: $EMAIL"
                     fi
                 fi
                 ;;
@@ -276,9 +316,9 @@ UUID: $UUID"
                 else
                     RES=$(bot-del-user "$EMAIL" 2>/dev/null || true)
                     if [ "$RES" = "1" ]; then
-                        send_msg "$CHAT" "User deleted: $EMAIL"
+                        send_msg "$CHAT" "${E_OK} User deleted: $EMAIL"
                     else
-                        send_msg "$CHAT" "Failed to delete user: $EMAIL"
+                        send_msg "$CHAT" "${E_ERR} Failed to delete user: $EMAIL"
                     fi
                 fi
                 ;;
@@ -322,13 +362,13 @@ PY
 )
                 OUT="${RES:-No users found.}"
                 ESC=$(printf '%s' "$OUT" | html_escape)
-                send_msg "$CHAT" "<b>Daftar User</b>
+                send_msg "$CHAT" "<b>${E_USER} User List</b>
 
 <pre>$ESC</pre>" "HTML" ;;
             *)
                 # Only reply to non-empty text
                 if [ -n "${TEXT:-}" ]; then
-                    send_msg "$CHAT" "Unknown command. Type /start or /help for the command list."
+                    send_msg "$CHAT" "${E_HELP} Unknown command. Type /start or /help for the command list."
                 fi
                 ;;
         esac
