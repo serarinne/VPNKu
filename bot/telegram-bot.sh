@@ -36,7 +36,7 @@ send_msg() {
 
 send_menu() {
     local chat_id="$1"; local text="$2"
-    local kb='{"keyboard":[["/status","/traffic"],["/warpon","/warpoff"],["/restartxray","/restarthaproxy"],["/restartvps"],["/add","/del","/users"],["/genconfig"],["/backup"],["/help"],["/start"]],"resize_keyboard":true,"one_time_keyboard":false}'
+    local kb='{"keyboard":[["Status Server","Traffic User"],["WARP On","WARP Off"],["Restart Xray","Restart HAProxy"],["Restart VPS"],["Tambah User","Hapus User","Daftar User"],["Config"],["Backup Config"],["Bantuan"],["Menu Utama"]],"resize_keyboard":true,"one_time_keyboard":false}'
     [ -z "$chat_id" ] && return 0
     curl -s -X POST "${API}/sendMessage" \
         -d "chat_id=${chat_id}" \
@@ -83,9 +83,23 @@ PY
         [ "${CHAT:-}" != "$ADMIN_CHAT_ID" ] && continue
         [ -z "${CHAT:-}" ] && continue
 
+        # Normalize reply-keyboard button labels to commands
         case "$TEXT" in
-            /menu)
-                TEXT="/start" ;;
+            "Status Server") TEXT="/status" ;;
+            "Traffic User") TEXT="/traffic" ;;
+            "WARP On") TEXT="/warpon" ;;
+            "WARP Off") TEXT="/warpoff" ;;
+            "Restart Xray") TEXT="/restartxray" ;;
+            "Restart HAProxy") TEXT="/restarthaproxy" ;;
+            "Restart VPS") TEXT="/restartvps" ;;
+            "Tambah User") TEXT="/add" ;;
+            "Hapus User") TEXT="/del" ;;
+            "Daftar User") TEXT="/users" ;;
+            "Config") TEXT="/config" ;;
+            "Backup Config") TEXT="/backup" ;;
+            "Bantuan") TEXT="/help" ;;
+            "Menu Utama") TEXT="/start" ;;
+            /menu) TEXT="/start" ;;
         esac
 
         case "$TEXT" in
@@ -105,7 +119,7 @@ Selamat datang! Gunakan tombol menu di bawah atau ketik perintah langsung.
 /add &lt;email&gt; [uuid] - Tambah user baru
 /del &lt;email&gt; - Hapus user
 /users - Daftar user &amp; masa aktif
-/genconfig &lt;email&gt; - Generate share link
+/config &lt;email&gt; - Generate share link
 /backup - Backup config Xray
 /help - Penjelasan lengkap tiap fitur
 /menu - Tampilkan ulang menu utama
@@ -128,7 +142,7 @@ Ketik /help untuk penjelasan detail." ;;
                 sleep 2
                 reboot ;;
             /genconfig|/config)
-                send_msg "$CHAT" "Usage: /genconfig <email>" ;;
+                send_msg "$CHAT" "Usage: /config <email>" ;;
             /backup)
                 BAK="/root/vpn-backups/xray-$(date +%Y%m%d-%H%M%S).json"
                 mkdir -p /root/vpn-backups
@@ -140,7 +154,7 @@ Ketik /help untuk penjelasan detail." ;;
             /genconfig\ *|/config\ *)
                 read -r _ EMAIL <<< "$TEXT"
                 if [ -z "${EMAIL:-}" ]; then
-                    send_msg "$CHAT" "Usage: /genconfig <email>"
+                    send_msg "$CHAT" "Usage: /config <email>"
                 else
                     if gen-config "$EMAIL" >/tmp/genconfig.out 2>&1; then
                         curl -s -X POST "${API}/sendDocument" \
@@ -187,7 +201,7 @@ Menghapus user dari semua protokol/transport sekaligus.
 <b>/users</b>
 Menampilkan daftar semua user beserta tanggal kadaluarsa akun.
 
-<b>/genconfig &lt;email&gt;</b>
+<b>/config &lt;email&gt;</b>
 Membuat file share link (vmess:// / vless://) untuk user dan mengirimkannya sebagai file.
 
 <b>/backup</b>
