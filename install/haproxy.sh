@@ -17,7 +17,7 @@ apt install haproxy -y >/dev/null 2>&1
 cat /etc/vps-data/cert.crt /etc/vps-data/cert.key > /etc/vps-data/haproxy.pem
 chmod 600 /etc/vps-data/haproxy.pem
 
-wget -q --inet4-only --no-cache "https://raw.githubusercontent.com/serarinne/VPNKu/main/config/haproxy.cfg?_=$(date +%s%N)" -O /etc/haproxy/haproxy.cfg
+wget -q --inet4-only "https://raw.githubusercontent.com/serarinne/VPNKu/main/config/haproxy.cfg?_=$(date +%s%N)" -O /etc/haproxy/haproxy.cfg
 
 haproxy -c -f /etc/haproxy/haproxy.cfg
 systemctl daemon-reload >/dev/null 2>&1

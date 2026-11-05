@@ -15,7 +15,7 @@ chown www-data:www-data /var/log/xray
 chmod 755 /var/log/xray
 touch /var/log/xray/access.log /var/log/xray/error.log
 
-wget -q --inet4-only --no-cache "https://raw.githubusercontent.com/serarinne/VPNKu/main/config/xray.json?_=$(date +%s%N)" -O /usr/local/etc/xray/config.json
+wget -q --inet4-only "https://raw.githubusercontent.com/serarinne/VPNKu/main/config/xray.json?_=$(date +%s%N)" -O /usr/local/etc/xray/config.json
 
 systemctl daemon-reload >/dev/null 2>&1
 systemctl enable xray >/dev/null 2>&1
