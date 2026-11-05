@@ -22,16 +22,18 @@ curl -s "${API}/deleteWebhook" >/dev/null 2>&1 || true
 send_msg() {
     local chat_id="$1"; local text="$2"; local mode="${3:-}"
     [ -z "$chat_id" ] && return 0
+    local resp
     if [ -n "$mode" ]; then
-        curl -s -X POST "${API}/sendMessage" \
+        resp=$(curl -s -X POST "${API}/sendMessage" \
             -d "chat_id=${chat_id}" \
             --data-urlencode "text=${text}" \
-            --data-urlencode "parse_mode=${mode}" >/dev/null 2>&1 || true
+            --data-urlencode "parse_mode=${mode}" 2>&1)
     else
-        curl -s -X POST "${API}/sendMessage" \
+        resp=$(curl -s -X POST "${API}/sendMessage" \
             -d "chat_id=${chat_id}" \
-            --data-urlencode "text=${text}" >/dev/null 2>&1 || true
+            --data-urlencode "text=${text}" 2>&1)
     fi
+    printf '[%s] send_msg: %s\n' "$(date '+%F %T')" "$resp" >> /tmp/vpnku-send.log 2>/dev/null || true
 }
 
 html_escape() {
@@ -58,11 +60,13 @@ PY
 send_inline() {
     local chat_id="$1"; local text="$2"; local kb="$3"
     [ -z "$chat_id" ] && return 0
-    curl -s -X POST "${API}/sendMessage" \
+    local resp
+    resp=$(curl -s -X POST "${API}/sendMessage" \
         -d "chat_id=${chat_id}" \
         --data-urlencode "text=${text}" \
         --data-urlencode "parse_mode=HTML" \
-        --data-urlencode "reply_markup=${kb}" >/dev/null 2>&1 || true
+        --data-urlencode "reply_markup=${kb}" 2>&1)
+    printf '[%s] send_inline: %s\n' "$(date '+%F %T')" "$resp" >> /tmp/vpnku-send.log 2>/dev/null || true
 }
 
 send_menu() {
@@ -297,22 +301,18 @@ Tips: Use the menu buttons below for quick access. Only the admin chat ID is all
                     fi
                     RES=$(bot-add-user "$EMAIL" "$UUID" 2>/dev/null || true)
                     if [ "$RES" = "1" ]; then
+                        send_msg "$CHAT" "${E_OK} User added: $EMAIL
+UUID: $UUID"
                         gen-config "$EMAIL" >/tmp/genconfig.out 2>&1 || true
                         if [ -f "/root/vpn-configs/${EMAIL}.txt" ]; then
                             CFG=$(cat "/root/vpn-configs/${EMAIL}.txt" 2>/dev/null)
                             ESC=$(printf '%s' "$CFG" | html_escape)
                             KB=$(build_kb "/root/vpn-configs/${EMAIL}.txt")
-                            send_inline "$CHAT" "${E_OK} <b>User added: $EMAIL</b>
-UUID: <code>$UUID</code>
-
-<b>${E_CONFIG} Config for $EMAIL</b>
+                            send_inline "$CHAT" "<b>${E_CONFIG} Config for $EMAIL</b>
 
 <pre>$ESC</pre>
 
 Tap a button to copy each link." "$KB"
-                        else
-                            send_msg "$CHAT" "${E_OK} User added: $EMAIL
-UUID: $UUID"
                         fi
                     else
                         send_msg "$CHAT" "${E_ERR} Failed to add user: $EMAIL"
