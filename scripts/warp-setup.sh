@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 CONFIG_PATH="/usr/local/etc/xray/config.json"
-TMP_FILE="/usr/local/etc/xray/config.json.tmp.$$"
+TMP_FILE="/usr/local/etc/xray/config.tmp.$$.json"
 trap 'rm -f "$TMP_FILE"' EXIT
 
 if [ "$(id -u)" -ne 0 ]; then

@@ -9,7 +9,7 @@ if [ -z "$CLIENT_EMAIL" ]; then
     exit 1
 fi
 
-TMP_FILE="/usr/local/etc/xray/config.json.tmp.$$"
+TMP_FILE="/usr/local/etc/xray/config.tmp.$$.json"
 if ! jq --arg email "$CLIENT_EMAIL" '
   .inbounds |= map(
     if (.settings.clients | type) == "array" then

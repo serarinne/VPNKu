@@ -36,7 +36,7 @@ if [ "$CLIENT_EXISTS" -gt 0 ]; then
     exit 1
 fi
 
-TMP_FILE="/usr/local/etc/xray/config.json.tmp.$$"
+TMP_FILE="/usr/local/etc/xray/config.tmp.$$.json"
 if ! jq --arg email "$CLIENT_EMAIL" --arg uuid "$NEW_UUID" --argjson expiry "$EXPIRY_MS" '
   .inbounds |= map(
     if (.settings.clients | type) == "array" then

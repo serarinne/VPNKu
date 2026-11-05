@@ -3,7 +3,7 @@ set -euo pipefail
 CONFIG_PATH="/usr/local/etc/xray/config.json"
 BACKUP_PATH="/usr/local/etc/xray/config.json.bak"
 
-cleanup() { rm -f /usr/local/etc/xray/config.json.tmp.*; }
+cleanup() { rm -f /usr/local/etc/xray/config.tmp.*.json; }
 trap cleanup EXIT
 
 if [ "$(id -u)" -ne 0 ]; then
@@ -34,7 +34,7 @@ if [ "$EXISTS" -eq 0 ]; then
 fi
 
 cp "$CONFIG_PATH" "$BACKUP_PATH"
-TMP_FILE="/usr/local/etc/xray/config.json.tmp.$$"
+TMP_FILE="/usr/local/etc/xray/config.tmp.$$.json"
 if ! jq --arg email "$CLIENT_EMAIL" '
   .inbounds |= map(
     if (.settings.clients | type) == "array" then

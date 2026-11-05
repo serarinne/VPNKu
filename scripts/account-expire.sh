@@ -17,7 +17,7 @@ fi
 
 CHANGED=0
 for EMAIL in $EXPIRED; do
-    TMP_FILE="/usr/local/etc/xray/config.json.tmp.$$"
+    TMP_FILE="/usr/local/etc/xray/config.tmp.$$.json"
     if jq --arg email "$EMAIL" '
       .inbounds |= map(
         if (.settings.clients | type) == "array" then
