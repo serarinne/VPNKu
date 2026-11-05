@@ -22,7 +22,7 @@ fi
 
 sed -i "s/^BOT_TOKEN=.*/BOT_TOKEN=\"${BOT_TOKEN}\"/" "$BOT_DIR/telegram-bot.sh"
 sed -i "s/^ADMIN_CHAT_ID=.*/ADMIN_CHAT_ID=\"${ADMIN_CHAT_ID}\"/" "$BOT_DIR/telegram-bot.sh"
-chmod 600 "$BOT_DIR/telegram-bot.sh"
+chmod 700 "$BOT_DIR/telegram-bot.sh"
 
 cat > /etc/systemd/system/vpnku-bot.service <<EOF
 [Unit]

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Telegram bot polling loop for VPNKu
-set -euo pipefail
+set -uo pipefail
 
 BOT_TOKEN="YOUR_BOT_TOKEN_HERE"
 ADMIN_CHAT_ID="YOUR_CHAT_ID_HERE"
@@ -25,8 +25,8 @@ send_menu() {
 }
 
 while true; do
-    RESP=$(curl -s "${API}/getUpdates?offset=${OFFSET}&timeout=30")
-    python3 - "$RESP" <<'PY' > /tmp/vpnku_updates.txt
+    RESP=$(curl -s "${API}/getUpdates?offset=${OFFSET}&timeout=30" || true)
+    python3 - "$RESP" <<'PY' > /tmp/vpnku_updates.txt || true
 import sys, json
 data = json.loads(sys.argv[1])
 for u in data.get("result", []):
