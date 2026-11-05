@@ -168,6 +168,26 @@ Estimated throughput (1 Gbps link): HTTPUpgrade ~850-920 Mbps, gRPC ~830-910 Mbp
 
 ---
 
+## Transport Recommendations by Use Case
+
+| Use Case | Recommended Transport | Why |
+|---|---|---|
+| Gaming (low latency) | HTTPUpgrade or Raw TCP | Lowest overhead, minimal latency; WS framing adds small delay |
+| Streaming (high throughput) | gRPC or HTTPUpgrade | Efficient framing, high throughput; gRPC multiplexing helps multiple streams |
+| Browsing / general | WebSocket | Best compatibility with CDNs and proxies |
+| Unstable network (high loss) | WebSocket or HTTPUpgrade | Per-connection independence; gRPC (HTTP/2) suffers head-of-line blocking |
+| Behind Cloudflare/CDN | WebSocket | Widest CDN support; gRPC limited |
+| Many concurrent users | gRPC | Multiplexing reduces connection overhead |
+| Minimal detection (stealth) | HTTPUpgrade | Traffic looks like normal HTTP |
+
+### Pros & Cons Summary
+
+- **WebSocket**: ✅ universal compatibility, CDN-friendly. ❌ moderate overhead, slightly higher latency.
+- **gRPC**: ✅ efficient, multiplexing, good throughput. ❌ higher CPU/memory, may be blocked, CDN limitations.
+- **HTTPUpgrade**: ✅ lowest overhead among HTTP transports, stealthy. ❌ less client/CDN support than WebSocket.
+
+---
+
 ## Cloudflare WARP (Optional)
 
 Xray includes a **WARP** outbound (WireGuard to Cloudflare) that can be toggled without manual config editing.

@@ -2,7 +2,7 @@
     "log": {
         "access": "none",
         "error": "none",
-        "loglevel": "info"
+        "loglevel": "warning"
     },
     "inbounds": [
         {
