@@ -267,7 +267,7 @@ Restarts HAProxy (reverse proxy). Use if routing/port issues occur.
 Reboots the entire VPS. All services will restart.
 
 <b>/add &lt;email&gt; [uuid]</b>
-Adds a new user to all protocols/transports (VMess &amp; VLESS x WebSocket, gRPC, HTTPUpgrade) at once. UUID auto-generated if omitted. Account valid for 30 days.
+Adds a new user to all protocols/transports (VMess &amp; VLESS x WebSocket, gRPC, HTTPUpgrade) at once. UUID auto-generated if omitted. Account valid for 30 days. Returns the UUID and all share links (vmess/vless for every transport).
 
 <b>/del &lt;email&gt;</b>
 Removes a user from all protocols/transports at once.
@@ -297,18 +297,22 @@ Tips: Use the menu buttons below for quick access. Only the admin chat ID is all
                     fi
                     RES=$(bot-add-user "$EMAIL" "$UUID" 2>/dev/null || true)
                     if [ "$RES" = "1" ]; then
-                        send_msg "$CHAT" "${E_OK} User added: $EMAIL
-UUID: $UUID"
                         gen-config "$EMAIL" >/tmp/genconfig.out 2>&1 || true
                         if [ -f "/root/vpn-configs/${EMAIL}.txt" ]; then
                             CFG=$(cat "/root/vpn-configs/${EMAIL}.txt" 2>/dev/null)
                             ESC=$(printf '%s' "$CFG" | html_escape)
                             KB=$(build_kb "/root/vpn-configs/${EMAIL}.txt")
-                            send_inline "$CHAT" "<b>${E_CONFIG} Config for $EMAIL</b>
+                            send_inline "$CHAT" "${E_OK} <b>User added: $EMAIL</b>
+UUID: <code>$UUID</code>
+
+<b>${E_CONFIG} Config for $EMAIL</b>
 
 <pre>$ESC</pre>
 
 Tap a button to copy each link." "$KB"
+                        else
+                            send_msg "$CHAT" "${E_OK} User added: $EMAIL
+UUID: $UUID"
                         fi
                     else
                         send_msg "$CHAT" "${E_ERR} Failed to add user: $EMAIL"
