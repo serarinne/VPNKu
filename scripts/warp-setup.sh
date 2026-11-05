@@ -31,10 +31,21 @@ fi
 chmod +x wgcf
 
 echo "[INFO] Registering Cloudflare WARP account..."
-./wgcf register --accept-tos >/dev/null 2>&1
+if [ -f wgcf-account.toml ]; then
+    echo "[INFO] Existing WARP account found, skipping registration."
+else
+    if ! ./wgcf register --accept-tos; then
+        echo "[ERR] Failed to register Cloudflare WARP account."
+        exit 1
+    fi
+fi
 
 echo "[INFO] Generating WireGuard profile..."
-./wgcf generate >/dev/null 2>&1
+rm -f wgcf-profile.conf
+if ! ./wgcf generate; then
+    echo "[ERR] Failed to generate WARP profile."
+    exit 1
+fi
 
 if [ ! -f wgcf-profile.conf ]; then
     echo "[ERR] Failed to create WARP profile."
