@@ -56,6 +56,31 @@ print("\n".join(out))
 PY
 }
 
+build_cb_kb() {
+    # args: file chat hash
+    python3 - "$1" "$2" "$3" <<'PY'
+import json, sys
+path, chat, h = sys.argv[1], sys.argv[2], sys.argv[3]
+links = []
+label = ""
+for raw in open(path, encoding="utf-8", errors="replace"):
+    line = raw.strip()
+    if line.startswith("---") and line.endswith("---"):
+        label = line.strip("- ").strip()
+        continue
+    if line.startswith("vmess://") or line.startswith("vless://"):
+        links.append((label, line))
+outpath = "/tmp/vpnku-links-%s-%s.txt" % (chat, h)
+with open(outpath, "w", encoding="utf-8") as f:
+    for _, l in links:
+        f.write(l + "\n")
+rows = []
+for i, (lab, _) in enumerate(links):
+    rows.append([{"text": "Copy " + (lab or ("Link %d" % (i + 1))), "callback_data": "cpy:%s:%d" % (h, i)}])
+print(json.dumps({"inline_keyboard": rows}))
+PY
+}
+
 build_kb() {
     python3 - "$1" <<'PY'
 import json, sys
@@ -130,11 +155,19 @@ except Exception:
     data = {}
 for u in (data or {}).get("result", []):
     uid = u.get("update_id")
+    if uid is None:
+        continue
+    cb = u.get("callback_query")
+    if cb:
+        cbid = cb.get("id")
+        cdata = cb.get("data") or ""
+        cmsg = cb.get("message") or {}
+        chat = (cmsg.get("chat") or {}).get("id")
+        print(f"{uid}|{chat}|CB:{cbid}:{cdata}")
+        continue
     msg = u.get("message", {}) or {}
     chat = msg.get("chat", {}).get("id")
     text = msg.get("text", "") or ""
-    if uid is None:
-        continue
     print(f"{uid}|{chat}|{text}")
 PY
 
@@ -320,11 +353,13 @@ UUID: $UUID"
                         gen-config "$EMAIL" >/tmp/genconfig.out 2>&1 || true
                         if [ -f "/root/vpn-configs/${EMAIL}.txt" ]; then
                             ESC=$(format_cfg_html "/root/vpn-configs/${EMAIL}.txt")
-                            send_msg "$CHAT" "<b>${E_CONFIG} Config for $EMAIL</b>
+                            HASH=$(printf '%s' "$EMAIL" | md5sum | cut -c1-8)
+                            KB=$(build_cb_kb "/root/vpn-configs/${EMAIL}.txt" "$CHAT" "$HASH")
+                            send_inline "$CHAT" "<b>${E_CONFIG} Config for $EMAIL</b>
 
 $ESC
 
-Tap the copy icon next to each link." "HTML"
+Tap a button to copy a single link." "$KB"
                         fi
                     else
                         send_msg "$CHAT" "${E_ERR} Failed to add user: $EMAIL"
@@ -389,6 +424,28 @@ PY
                 send_msg "$CHAT" "<b>${E_USER} User List</b>
 
 <pre>$ESC</pre>" "HTML" ;;
+            CB:*)
+                rest="${TEXT#CB:}"
+                CB_ID="${rest%%:*}"
+                CB_DATA="${rest#*:}"
+                # acknowledge callback to remove spinner
+                curl -s -X POST "${API}/answerCallbackQuery" \
+                    -d "callback_query_id=${CB_ID}" >/dev/null 2>&1 || true
+                case "$CB_DATA" in
+                    cpy:*)
+                        h="${CB_DATA#cpy:}"; h="${h%%:*}"
+                        idx="${CB_DATA##*:}"
+                        file="/tmp/vpnku-links-${CHAT}-${h}.txt"
+                        if [ -f "$file" ]; then
+                            link=$(sed -n "$((idx + 1))p" "$file" 2>/dev/null)
+                            if [ -n "$link" ]; then
+                                esc_link=$(printf '%s' "$link" | html_escape)
+                                send_msg "$CHAT" "<code>${esc_link}</code>" "HTML"
+                            fi
+                        fi
+                        ;;
+                esac
+                ;;
             *)
                 # Only reply to non-empty text
                 if [ -n "${TEXT:-}" ]; then
