@@ -69,8 +69,10 @@ if ! jq --arg key "$PRIVATE_KEY" --argjson addrs "$ADDR_JSON" '
     exit 1
 fi
 
-if ! xray run -test -config "$TMP_FILE" >/dev/null 2>&1; then
+cp "$TMP_FILE" /tmp/warp-config.candidate.json 2>/dev/null || true
+if ! xray run -test -config "$TMP_FILE"; then
     echo "[ERR] Invalid configuration. Aborted."
+    echo "[INFO] Failing config saved to /tmp/warp-config.candidate.json"
     exit 1
 fi
 
