@@ -1,0 +1,246 @@
+{
+    "log": {
+        "access": "none",
+        "error": "none",
+        "loglevel": "info"
+    },
+    "inbounds": [
+        {
+            "listen": "127.0.0.1",
+            "port": 6969,
+            "protocol": "dokodemo-door",
+            "settings": {
+                "address": "127.0.0.1"
+            },
+            "tag": "API-Inbound"
+        },
+        {
+            "listen": "127.0.0.1",
+            "port": 7001,
+            "protocol": "vmess",
+            "settings": {
+                "clients": [
+                    {
+                        "id": "60d9785f-0e59-4988-aee1-322351b4de7f",
+                        "alterId": 0,
+                        "level": 0,
+                        "security": "auto",
+                        "email": "Admin-WS"
+                    }
+                ]
+            },
+            "streamSettings": {
+                "network": "ws",
+                "wsSettings": {
+                    "path": "/vmess"
+                }
+            },
+            "tag": "Vmess-Connection"
+        },
+        {
+            "listen": "127.0.0.1",
+            "port": 7002,
+            "protocol": "vless",
+            "settings": {
+                "clients": [
+                    {
+                        "id": "60d9785f-0e59-4988-aee1-322351b4de7f",
+                        "level": 0,
+                        "email": "Admin-VLESS-WS"
+                    }
+                ],
+                "decryption": "none"
+            },
+            "streamSettings": {
+                "network": "ws",
+                "wsSettings": {
+                    "path": "/vless"
+                }
+            },
+            "tag": "VLESS-WS-Connection"
+        },
+        {
+            "listen": "127.0.0.1",
+            "port": 7003,
+            "protocol": "vmess",
+            "settings": {
+                "clients": [
+                    {
+                        "id": "60d9785f-0e59-4988-aee1-322351b4de7f",
+                        "alterId": 0,
+                        "level": 0,
+                        "security": "auto",
+                        "email": "Admin-VMess-GRPC"
+                    }
+                ]
+            },
+            "streamSettings": {
+                "network": "grpc",
+                "grpcSettings": {
+                    "serviceName": "vmess-grpc"
+                }
+            },
+            "tag": "VMess-GRPC-Connection"
+        },
+        {
+            "listen": "127.0.0.1",
+            "port": 7004,
+            "protocol": "vless",
+            "settings": {
+                "clients": [
+                    {
+                        "id": "60d9785f-0e59-4988-aee1-322351b4de7f",
+                        "level": 0,
+                        "email": "Admin-VLESS-GRPC"
+                    }
+                ],
+                "decryption": "none"
+            },
+            "streamSettings": {
+                "network": "grpc",
+                "grpcSettings": {
+                    "serviceName": "vless-grpc"
+                }
+            },
+            "tag": "VLESS-GRPC-Connection"
+        },
+        {
+            "listen": "127.0.0.1",
+            "port": 7005,
+            "protocol": "vmess",
+            "settings": {
+                "clients": [
+                    {
+                        "id": "60d9785f-0e59-4988-aee1-322351b4de7f",
+                        "alterId": 0,
+                        "level": 0,
+                        "security": "auto",
+                        "email": "Admin-VMess-HU"
+                    }
+                ]
+            },
+            "streamSettings": {
+                "network": "httpupgrade",
+                "httpupgradeSettings": {
+                    "path": "/vmess-hu"
+                }
+            },
+            "tag": "VMess-HTTPUpgrade-Connection"
+        },
+        {
+            "listen": "127.0.0.1",
+            "port": 7006,
+            "protocol": "vless",
+            "settings": {
+                "clients": [
+                    {
+                        "id": "60d9785f-0e59-4988-aee1-322351b4de7f",
+                        "level": 0,
+                        "email": "Admin-VLESS-HU"
+                    }
+                ],
+                "decryption": "none"
+            },
+            "streamSettings": {
+                "network": "httpupgrade",
+                "httpupgradeSettings": {
+                    "path": "/vless-hu"
+                }
+            },
+            "tag": "VLESS-HTTPUpgrade-Connection"
+        }
+    ],
+    "outbounds": [
+        {
+            "protocol": "freedom",
+            "tag": "Direct-Connection"
+        },
+        {
+            "protocol": "blackhole",
+            "tag": "Blackhole"
+        },
+        {
+            "protocol": "wireguard",
+            "settings": {
+                "secretKey": "WARP_PRIVATE_KEY",
+                "address": [
+                    "172.16.0.2/32",
+                    "2606:4700:110:8f81:d551:a0:532e:a2b3/128"
+                ],
+                "peers": [
+                    {
+                        "publicKey": "bmXOC+F1FxEMF9dyiK2H5/1SUtzH0JuVo51h2wPfgyo=",
+                        "endpoint": "engage.cloudflareclient.com:2408"
+                    }
+                ]
+            },
+            "tag": "WARP"
+        }
+    ],
+    "routing": {
+        "domainStrategy": "AsIs",
+        "domainMatcher": "hybrid",
+        "rules": [
+            {
+                "type": "field",
+                "network": "tcp,udp",
+                "warpRoute": true,
+                "outboundTag": "Direct-Connection"
+            },
+            {
+                "domainMatcher": "hybrid",
+                "type": "field",
+                "protocol": [
+                    "http",
+                    "tls"
+                ],
+                "outboundTag": "Direct-Connection"
+            },
+            {
+                "type": "field",
+                "domain": [
+                    "ext:geosite.dat:category-ads-all"
+                ],
+                "outboundTag": "Blackhole"
+            },
+            {
+                "type": "field",
+                "protocol": [
+                    "bittorrent"
+                ],
+                "outboundTag": "Blackhole"
+            },
+            {
+                "type": "field",
+                "inboundTag": [
+                    "API-Inbound"
+                ],
+                "outboundTag": "API-Connection"
+            }
+        ]
+    },
+    "api": {
+        "tag": "API-Connection",
+        "services": [
+            "HandlerService",
+            "LoggerService",
+            "StatsService"
+        ]
+    },
+    "policy": {
+        "levels": {
+            "0": {
+                "statsUserDownlink": true,
+                "statsUserUplink": true,
+                "statsUserOnline": true
+            }
+        },
+        "system": {
+            "statsInboundUplink": true,
+            "statsInboundDownlink": true,
+            "statsOutboundUplink": true,
+            "statsOutboundDownlink": true
+        }
+    },
+    "stats": {}
+}

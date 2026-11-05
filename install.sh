@@ -1,152 +1,92 @@
 #!/bin/bash
+set -euo pipefail
 timedatectl set-timezone Asia/Jakarta
 
 if [ "$(id -u)" -ne 0 ]; then
-   echo "Skrip ini harus dijalankan sebagai root" 1>&2
+   echo "[ERR] This script must be run as root" 1>&2
    exit 1
 fi
 
-sleep 2
-clear
-echo -e "-----------------------------------------"
-echo -e "|           Instalasi Package           |"
-echo -e "-----------------------------------------"
-sleep 1
-apt-get remove --purge nginx* -y
-apt-get remove --purge nginx-common* -y
-apt-get remove --purge nginx-full* -y
-apt-get remove --purge dropbear* -y
-apt-get remove --purge stunnel4* -y
-apt-get remove --purge apache2* -y
-apt-get remove --purge ufw* -y
-apt-get remove --purge firewalld* -y
-apt-get remove --purge exim4* -y
-apt autoremove -y
+step() { echo ""; echo "[INFO] ($1/$2) $3"; }
 
+TOTAL=8
+step 1 $TOTAL "Installing packages"
+apt-get remove --purge nginx* nginx-common* nginx-full* apache2* ufw* firewalld* exim4* -y >/dev/null 2>&1 || true
+apt autoremove -y >/dev/null 2>&1 || true
 apt update -y
+apt install -y sudo dpkg psmisc socat jq ruby wondershaper python3 tmux nmap bzip2 gzip coreutils screen rsyslog iftop htop zip unzip wget vim net-tools curl nano sed gnupg gnupg1 bc apt-transport-https build-essential gcc g++ automake make autoconf perl m4 dos2unix libreadline-dev zlib1g-dev libssl-dev dirmngr libxml-parser-perl neofetch git lsof iptables iptables-persistent screenfetch openssl easy-rsa fail2ban vnstat libsqlite3-dev cron bash-completion ntpdate xz-utils gnupg2 dnsutils lsb-release chrony lolcat ufw
 
-apt install sudo dpkg psmisc socat jq ruby wondershaper python3 tmux nmap bzip2 gzip coreutils screen rsyslog iftop htop zip unzip wget vim net-tools curl nano sed gnupg gnupg1 bc apt-transport-https build-essential gcc g++ automake make autoconf perl m4 dos2unix libreadline-dev zlib1g-dev libssl-dev dirmngr libxml-parser-perl neofetch git lsof iptables iptables-persistent screenfetch openssl easy-rsa fail2ban vnstat libsqlite3-dev cron bash-completion ntpdate xz-utils gnupg2 dnsutils lsb-release chrony lolcat -y
-
-sleep 2
-clear
-echo -e "-----------------------------------------"
-echo -e "|             Setup Server              |"
-echo -e "-----------------------------------------"
-sleep 1
-echo -e ""
+step 2 $TOTAL "Server setup"
 read -rp "Server Name        : " SERVER_NAME
 read -rp "Server Domain      : " SERVER_DOMAIN
 mkdir -p /etc/vps-data
-rm -f /etc/vps-data/name
-rm -f /etc/vps-data/domain
-echo $SERVER_NAME > /etc/vps-data/name
-echo $SERVER_DOMAIN > /etc/vps-data/domain
+rm -f /etc/vps-data/name /etc/vps-data/domain
+echo "$SERVER_NAME" > /etc/vps-data/name
+echo "$SERVER_DOMAIN" > /etc/vps-data/domain
 
-#curl https://get.acme.sh | sh -s email=admin@seras.my.id
+openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
+  -keyout /etc/vps-data/cert.key -out /etc/vps-data/cert.crt \
+  -subj "/C=ID/ST=Jawa Barat/L=Bogor/O=Serarinne/OU=VPN/CN=${SERVER_DOMAIN}"
 
-#/root/.acme.sh/acme.sh --set-default-ca --server letsencrypt
-#/root/.acme.sh/acme.sh --issue -d $SERVER_DOMAIN --standalone -k ec-256
-#/root/.acme.sh/acme.sh --install-cert -d $SERVER_DOMAIN --fullchain-file /etc/vps-data/cert.crt --key-file /etc/vps-data/cert.key --ecc
+fetch() {
+  if ! wget -q --inet4-only "$1" -O "$2"; then
+    echo "[ERR] Failed to download $1"
+    exit 1
+  fi
+}
 
-openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout /etc/vps-data/cert.key -out /etc/vps-data/cert.crt -subj "/C=ID/ST=Jawa Barat/L=Bogor/O=Serarinne/OU=VPN/CN=${SERVER_DOMAIN}"
+step 3 $TOTAL "Xray-Core"
+fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/install/xray.sh" "install/xray.sh"
+chmod +x install/xray.sh && ./install/xray.sh
+rm -f install/xray.sh
 
-sleep 2
-clear
-echo -e "-----------------------------------------"
-echo -e "|                OpenSSH                |"
-echo -e "-----------------------------------------"
-sleep 1
-wget -q --inet4-only https://raw.githubusercontent.com/Serarinne/VPNKu/main/install-openssh.sh >/dev/null 2>&1 && chmod +x install-openssh.sh && ./install-openssh.sh
-rm install-openssh.sh
+step 4 $TOTAL "HAProxy"
+fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/install/haproxy.sh" "install/haproxy.sh"
+chmod +x install/haproxy.sh && ./install/haproxy.sh
+rm -f install/haproxy.sh
 
-sleep 2
-clear
-echo -e "-----------------------------------------"
-echo -e "|               Dropbear                |"
-echo -e "-----------------------------------------"
-sleep 1
-wget -q --inet4-only https://raw.githubusercontent.com/Serarinne/VPNKu/main/install-dropbear.sh >/dev/null 2>&1 && chmod +x install-dropbear.sh && ./install-dropbear.sh
-rm install-dropbear.sh
+step 5 $TOTAL "System optimization"
+fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/install/optimize.sh" "install/optimize.sh"
+chmod +x install/optimize.sh && ./install/optimize.sh
+rm -f install/optimize.sh
 
-sleep 2
-clear
-echo -e "-----------------------------------------"
-echo -e "|                STunnel                |"
-echo -e "-----------------------------------------"
-sleep 1
-wget -q --inet4-only https://raw.githubusercontent.com/Serarinne/VPNKu/main/install-stunnel.sh >/dev/null 2>&1 && chmod +x install-stunnel.sh && ./install-stunnel.sh
-rm install-stunnel.sh
+step 6 $TOTAL "Downloading commands"
+mkdir -p /usr/bin
+fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/scripts/account-add.sh" "/usr/bin/add-user" && chmod +x /usr/bin/add-user
+fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/scripts/account-del.sh" "/usr/bin/del-user" && chmod +x /usr/bin/del-user
+fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/scripts/warp-setup.sh" "/usr/bin/warp-setup" && chmod +x /usr/bin/warp-setup
+fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/scripts/warp-on.sh" "/usr/bin/warp-on" && chmod +x /usr/bin/warp-on
+fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/scripts/warp-off.sh" "/usr/bin/warp-off" && chmod +x /usr/bin/warp-off
+fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/scripts/status.sh" "/usr/bin/vpn-status" && chmod +x /usr/bin/vpn-status
+fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/scripts/uninstall.sh" "/usr/bin/uninstall-vpn" && chmod +x /usr/bin/uninstall-vpn
+fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/scripts/traffic.sh" "/usr/bin/traffic" && chmod +x /usr/bin/traffic
+fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/scripts/account-expire.sh" "/usr/bin/expire-accounts" && chmod +x /usr/bin/expire-accounts
+fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/scripts/gen-config.sh" "/usr/bin/gen-config" && chmod +x /usr/bin/gen-config
+fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/scripts/setup-telegram-bot.sh" "/usr/bin/setup-telegram-bot" && chmod +x /usr/bin/setup-telegram-bot
+fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/scripts/update.sh" "/usr/bin/update-vpn" && chmod +x /usr/bin/update-vpn
+fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/bot/account-add.sh" "/usr/bin/bot-add-user" && chmod +x /usr/bin/bot-add-user
+fetch "https://raw.githubusercontent.com/Serarinne/VPNKu/main/bot/account-del.sh" "/usr/bin/bot-del-user" && chmod +x /usr/bin/bot-del-user
 
-sleep 2
-clear
-echo -e "-----------------------------------------"
-echo -e "|       WebSocket Proxy (Python)        |"
-echo -e "-----------------------------------------"
-sleep 1
-wget -q --inet4-only https://raw.githubusercontent.com/Serarinne/VPNKu/main/install-ws-proxy.sh >/dev/null 2>&1 && chmod +x install-ws-proxy.sh && ./install-ws-proxy.sh
-rm install-ws-proxy.sh
+# Daily expiry cleanup at 00:00
+(crontab -l 2>/dev/null; echo "0 0 * * * /usr/bin/expire-accounts") | sort -u | crontab -
 
-sleep 2
-clear
-echo -e "-----------------------------------------"
-echo -e "|                BadVPN                 |"
-echo -e "-----------------------------------------"
-sleep 1
-wget -q --inet4-only https://raw.githubusercontent.com/Serarinne/VPNKu/main/install-badvpn.sh >/dev/null 2>&1 && chmod +x install-badvpn.sh && ./install-badvpn.sh
-rm install-badvpn.sh
+step 7 $TOTAL "Firewall"
+ufw --force reset >/dev/null 2>&1 || true
+ufw default deny incoming >/dev/null 2>&1 || true
+ufw default allow outgoing >/dev/null 2>&1 || true
+ufw allow 22/tcp >/dev/null 2>&1 || true
+ufw allow 80/tcp >/dev/null 2>&1 || true
+ufw allow 443/tcp >/dev/null 2>&1 || true
+ufw --force enable >/dev/null 2>&1 || true
 
-sleep 2
-clear
-echo -e "-----------------------------------------"
-echo -e "|              XRAY-Core                |"
-echo -e "-----------------------------------------"
-sleep 1
-wget -q --inet4-only https://raw.githubusercontent.com/Serarinne/VPNKu/main/install-xray.sh >/dev/null 2>&1 && chmod +x install-xray.sh && ./install-xray.sh
-rm install-xray.sh
-
-sleep 2
-clear
-echo -e "-----------------------------------------"
-echo -e "|                Nginx                  |"
-echo -e "-----------------------------------------"
-sleep 1
-wget -q --inet4-only https://raw.githubusercontent.com/Serarinne/VPNKu/main/install-nginx.sh >/dev/null 2>&1 && chmod +x install-nginx.sh && ./install-nginx.sh
-rm install-nginx.sh
-
-sleep 2
-clear
-echo -e "-----------------------------------------"
-echo -e "|               Optimasi                |"
-echo -e "-----------------------------------------"
-sleep 1
-wget -q --inet4-only https://raw.githubusercontent.com/Serarinne/VPNKu/main/optimasi-sistem.sh >/dev/null 2>&1 && chmod +x optimasi-sistem.sh && ./optimasi-sistem.sh
-rm optimasi-sistem.sh
-
-sleep 2
-clear
-echo -e "-----------------------------------------"
-echo -e "|          Unduh File Perintah          |"
-echo -e "-----------------------------------------"
+step 8 $TOTAL "Done"
+echo "[OK] Installation complete. Reboot to apply."
 echo ""
-sleep 1
-echo "=> Tambah Akun SSH"
-wget --inet4-only -O /usr/bin/tambah-ssh -q https://raw.githubusercontent.com/Serarinne/VPNKu/main/bash/tambah-ssh.sh >/dev/null 2>&1 && chmod +x /usr/bin/tambah-ssh
-echo "=> Hapus Akun SSH"
-wget --inet4-only -O /usr/bin/hapus-ssh -q https://raw.githubusercontent.com/Serarinne/VPNKu/main/bash/hapus-ssh.sh >/dev/null 2>&1 && chmod +x /usr/bin/hapus-ssh
-echo "=> Tambah Akun VMESS"
-wget --inet4-only -O /usr/bin/tambah-vmess -q https://raw.githubusercontent.com/Serarinne/VPNKu/main/bash/tambah-vmess.sh >/dev/null 2>&1 && chmod +x /usr/bin/tambah-vmess
-echo "=> Hapus Akun VMESS"
-wget --inet4-only -O /usr/bin/hapus-vmess -q https://raw.githubusercontent.com/Serarinne/VPNKu/main/bash/hapus-vmess.sh >/dev/null 2>&1 && chmod +x /usr/bin/hapus-vmess
+read -rp "Configure Telegram bot now? (y/N): " CFG_BOT
+if [ "$CFG_BOT" = "y" ] || [ "$CFG_BOT" = "Y" ]; then
+    setup-telegram-bot
+fi
 
-echo "=> Bot Tambah Akun SSH"
-wget --inet4-only -O /usr/bin/bot-tambah-ssh -q https://raw.githubusercontent.com/Serarinne/VPNKu/main/bot/bot-tambah-ssh.sh >/dev/null 2>&1 && chmod +x /usr/bin/bot-tambah-ssh
-echo "=> Bot Hapus Akun SSH"
-wget --inet4-only -O /usr/bin/bot-hapus-ssh -q https://raw.githubusercontent.com/Serarinne/VPNKu/main/bot/bot-hapus-ssh.sh >/dev/null 2>&1 && chmod +x /usr/bin/bot-hapus-ssh
-echo "=> Bot Tambah Akun VMESS"
-wget --inet4-only -O /usr/bin/bot-tambah-vmess -q https://raw.githubusercontent.com/Serarinne/VPNKu/main/bot/bot-tambah-vmess.sh >/dev/null 2>&1 && chmod +x /usr/bin/bot-tambah-vmess
-echo "=> Bot Hapus Akun VMESS"
-wget --inet4-only -O /usr/bin/bot-hapus-vmess -q https://raw.githubusercontent.com/Serarinne/VPNKu/main/bot/bot-hapus-vmess.sh >/dev/null 2>&1 && chmod +x /usr/bin/bot-hapus-vmess
-
-read -p "$(echo -e "Tekan [Enter] untuk Reboot")"
-rm install.sh
+read -rp "Press [Enter] to Reboot"
+rm -f install.sh
 reboot
