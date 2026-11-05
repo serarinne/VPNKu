@@ -274,11 +274,13 @@ Type /help for detailed explanations." ;;
                     if gen-config "$EMAIL" >/tmp/genconfig.out 2>&1; then
                         if [ -f "/root/vpn-configs/${EMAIL}.txt" ]; then
                             ESC=$(format_cfg_html "/root/vpn-configs/${EMAIL}.txt")
-                            send_msg "$CHAT" "<b>${E_CONFIG} Config for $EMAIL</b>
- 
+                            HASH=$(printf '%s' "$EMAIL" | md5sum | cut -c1-8)
+                            KB=$(build_cb_kb "/root/vpn-configs/${EMAIL}.txt" "$CHAT" "$HASH")
+                            send_inline "$CHAT" "<b>${E_CONFIG} Config for $EMAIL</b>
+  
 $ESC
- 
-Tap the copy icon next to each link." "HTML"
+  
+Tap a button to copy a single link." "$KB"
                         else
                             send_msg "$CHAT" "Config generated."
                         fi
