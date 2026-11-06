@@ -153,7 +153,20 @@
     "outbounds": [
         {
             "protocol": "freedom",
-            "tag": "Direct-Connection"
+            "tag": "API-Connection"
+        },
+        {
+            "protocol": "freedom",
+            "tag": "Direct-Connection",
+            "streamSettings": {
+                "sockopt": {
+                    "tcpcongestion": "bbr",
+                    "tcpFastOpen": true,
+                    "tcpKeepAliveIdle": 30,
+                    "tcpKeepAliveInterval": 10,
+                    "tcpUserTimeout": 10000
+                }
+            }
         },
         {
             "protocol": "blackhole",

@@ -74,7 +74,7 @@ VPNKu/
 
 ## Requirements
 
-- Fresh Debian/Ubuntu VPS.
+- Fresh Debian (12/13) or Ubuntu (22.04/24.04) VPS.
 - Root access.
 - Domain (optional, for SNI/SSL).
 
@@ -83,11 +83,8 @@ VPNKu/
 ## Installation
 
 ```bash
-# Debian
+# Debian / Ubuntu (the installer auto-detects the OS)
 apt update -y && apt upgrade -y && apt dist-upgrade -y && reboot
-
-# Ubuntu
-apt-get update && apt-get upgrade -y && apt dist-upgrade -y && update-grub && reboot
 
 # Install VPNKu
 cd /root && wget https://raw.githubusercontent.com/serarinne/VPNKu/main/install.sh && chmod +x install.sh && ./install.sh
@@ -130,6 +127,8 @@ del-user      # delete client from all protocols & transports (choose from list)
 gen-config    # generate share links (vmess/vless) for a client
 expire-accounts # remove expired accounts (30 days) manually
 status-vpn    # show service status, WARP, client count
+check-optimize # verify BBR & TCP tuning
+gaming-mode   # apply latency/gaming tuning (smaller buffers)
 traffic       # show per-user bandwidth usage (up/down)
 traffic --reset # reset usage statistics
 warp-setup    # setup Cloudflare WARP (once)
@@ -303,7 +302,17 @@ Then run `gen-config` again.
 traffic         # show per-user upload/download (MB)
 traffic --reset # reset counters
 status-vpn      # service status, WARP, client count
+check-optimize  # verify BBR & TCP tuning applied
 ```
+
+### Optimization Notes
+- `optimize.sh` enables **BBR** (if kernel supports) with `fq` qdisc, raises TCP buffers/backlog, and tunes Xray/HAProxy FD limits & priority.
+- Torrent-blocking via iptables string-match was **removed**: ineffective on encrypted VPN traffic and adds CPU overhead.
+- Swap (2GB) is for stability, not network speed.
+- Verify with `check-optimize`; BBR should report `bbr`. If not, your kernel may lack BBR support.
+- Xray outbound (direct) uses `tcpcongestion: bbr`, TFO, keepalive & user-timeout for lower latency.
+- HAProxy tuned: `maxconn 16384`, `bufsize 65536`, `h2 initial-window-size 262144`, `tcp-smart-connect`.
+- Gaming: run `gaming-mode` (smaller buffers, lower bufferbloat), use HTTPUpgrade, keep WARP off.
 
 ---
 

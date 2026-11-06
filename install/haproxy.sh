@@ -9,8 +9,8 @@ DOMAIN=$(cat /etc/vps-data/domain)
 
 echo "[INFO] Starting HAProxy installation & configuration..."
 
-apt-get remove --purge nginx* nginx-common* nginx-full* -y >/dev/null 2>&1
-apt autoremove -y >/dev/null 2>&1
+apt-get remove --purge nginx* nginx-common* nginx-full* -y >/dev/null 2>&1 || true
+apt autoremove -y >/dev/null 2>&1 || true
 apt install haproxy -y >/dev/null 2>&1
 
 # Combine certificate and key into a single PEM file (HAProxy format)

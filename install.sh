@@ -1,20 +1,62 @@
 #!/bin/bash
 set -euo pipefail
-timedatectl set-timezone Asia/Jakarta
 
 if [ "$(id -u)" -ne 0 ]; then
    echo "[ERR] This script must be run as root" 1>&2
    exit 1
 fi
 
+timedatectl set-timezone Asia/Jakarta 2>/dev/null || true
+
 step() { echo ""; echo "[INFO] ($1/$2) $3"; }
+
+# Detect OS (Debian / Ubuntu) for package differences
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+else
+    echo "[ERR] /etc/os-release not found; unsupported system." 1>&2
+    exit 1
+fi
+
+case "${ID:-}" in
+    debian|ubuntu) ;;
+    *)
+        echo "[ERR] Unsupported OS: ${ID:-unknown}. Only Debian and Ubuntu are supported." 1>&2
+        exit 1
+        ;;
+esac
+
+# Base packages available on both Debian and Ubuntu
+PKGS=(
+    sudo dpkg psmisc socat jq ruby wondershaper python3 tmux nmap bzip2 gzip
+    coreutils screen rsyslog iftop htop zip unzip wget vim net-tools curl nano
+    sed gnupg bc build-essential gcc g++ automake make autoconf perl m4 dos2unix
+    libreadline-dev zlib1g-dev libssl-dev dirmngr libxml-parser-perl git lsof
+    iptables iptables-persistent screenfetch openssl easy-rsa fail2ban vnstat
+    libsqlite3-dev cron bash-completion xz-utils gnupg2 dnsutils lsb-release
+    chrony lolcat
+)
+
+# Debian 13 (Trixie) removed several legacy packages; keep them only where available
+if [ "${ID}" = "ubuntu" ]; then
+    PKGS+=(neofetch gnupg1 apt-transport-https ntpdate)
+fi
+# On Debian, neofetch/gnupg1/apt-transport-https/ntpdate may be absent (esp. Debian 13);
+# install them opportunistically without failing the whole installation.
+if [ "${ID}" = "debian" ]; then
+    for opt in neofetch gnupg1 apt-transport-https ntpdate; do
+        if apt-cache show "$opt" >/dev/null 2>&1; then
+            PKGS+=("$opt")
+        fi
+    done
+fi
 
 TOTAL=8
 step 1 $TOTAL "Installing packages"
 apt-get remove --purge nginx* nginx-common* nginx-full* apache2* ufw* firewalld* exim4* -y >/dev/null 2>&1 || true
 apt autoremove -y >/dev/null 2>&1 || true
 apt update -y
-DEBIAN_FRONTEND=noninteractive apt install -y sudo dpkg psmisc socat jq ruby wondershaper python3 tmux nmap bzip2 gzip coreutils screen rsyslog iftop htop zip unzip wget vim net-tools curl nano sed gnupg gnupg1 bc apt-transport-https build-essential gcc g++ automake make autoconf perl m4 dos2unix libreadline-dev zlib1g-dev libssl-dev dirmngr libxml-parser-perl neofetch git lsof iptables iptables-persistent screenfetch openssl easy-rsa fail2ban vnstat libsqlite3-dev cron bash-completion ntpdate xz-utils gnupg2 dnsutils lsb-release chrony lolcat
+DEBIAN_FRONTEND=noninteractive apt install -y "${PKGS[@]}"
 
 step 2 $TOTAL "Server setup"
 read -rp "Server Name        : " SERVER_NAME
@@ -66,6 +108,8 @@ fetch "https://raw.githubusercontent.com/serarinne/VPNKu/main/scripts/warp-setup
 fetch "https://raw.githubusercontent.com/serarinne/VPNKu/main/scripts/warp-on.sh" "/usr/bin/warp-on" && chmod +x /usr/bin/warp-on
 fetch "https://raw.githubusercontent.com/serarinne/VPNKu/main/scripts/warp-off.sh" "/usr/bin/warp-off" && chmod +x /usr/bin/warp-off
 fetch "https://raw.githubusercontent.com/serarinne/VPNKu/main/scripts/status.sh" "/usr/bin/vpn-status" && chmod +x /usr/bin/vpn-status
+fetch "https://raw.githubusercontent.com/serarinne/VPNKu/main/scripts/check-optimize.sh" "/usr/bin/check-optimize" && chmod +x /usr/bin/check-optimize
+fetch "https://raw.githubusercontent.com/serarinne/VPNKu/main/scripts/gaming-mode.sh" "/usr/bin/gaming-mode" && chmod +x /usr/bin/gaming-mode
 fetch "https://raw.githubusercontent.com/serarinne/VPNKu/main/scripts/uninstall.sh" "/usr/bin/uninstall-vpn" && chmod +x /usr/bin/uninstall-vpn
 fetch "https://raw.githubusercontent.com/serarinne/VPNKu/main/scripts/traffic.sh" "/usr/bin/traffic" && chmod +x /usr/bin/traffic
 fetch "https://raw.githubusercontent.com/serarinne/VPNKu/main/scripts/account-expire.sh" "/usr/bin/expire-accounts" && chmod +x /usr/bin/expire-accounts
