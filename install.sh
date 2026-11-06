@@ -26,9 +26,14 @@ case "${ID:-}" in
         ;;
 esac
 
+# Helper: only keep packages that actually have an installable candidate
+pkg_available() {
+    apt-cache policy "$1" 2>/dev/null | awk '/Candidate:/ {print $2}' | grep -qv '(none)'
+}
+
 # Base packages available on both Debian and Ubuntu
 PKGS=(
-    sudo dpkg psmisc socat jq ruby wondershaper python3 tmux nmap bzip2 gzip
+    sudo dpkg psmisc socat jq ruby python3 tmux nmap bzip2 gzip
     coreutils screen rsyslog iftop htop zip unzip wget vim net-tools curl nano
     sed gnupg bc build-essential gcc g++ automake make autoconf perl m4 dos2unix
     libreadline-dev zlib1g-dev libssl-dev dirmngr libxml-parser-perl git lsof
@@ -37,19 +42,8 @@ PKGS=(
     chrony lolcat
 )
 
-# Debian 13 (Trixie) removed several legacy packages; keep them only where available
-if [ "${ID}" = "ubuntu" ]; then
-    PKGS+=(neofetch gnupg1 apt-transport-https ntpdate)
-fi
-# On Debian, neofetch/gnupg1/apt-transport-https/ntpdate may be absent (esp. Debian 13);
-# install them opportunistically without failing the whole installation.
-if [ "${ID}" = "debian" ]; then
-    for opt in neofetch gnupg1 apt-transport-https ntpdate; do
-        if apt-cache show "$opt" >/dev/null 2>&1; then
-            PKGS+=("$opt")
-        fi
-    done
-fi
+# Optional/legacy packages resolved after `apt update` (see step 2).
+OPTIONAL_PKGS=(neofetch gnupg1 apt-transport-https ntpdate ntpsec-ntpdate wondershaper)
 
 TOTAL=8
 step 1 $TOTAL "Server setup"
@@ -83,6 +77,34 @@ step 2 $TOTAL "Installing packages"
 apt-get remove --purge nginx* nginx-common* nginx-full* apache2* ufw* firewalld* exim4* -y >/dev/null 2>&1 || true
 apt autoremove -y >/dev/null 2>&1 || true
 apt update -y
+
+# Resolve optional/legacy packages now that apt lists are fresh.
+if [ "${ID}" = "ubuntu" ]; then
+    for opt in neofetch gnupg1 apt-transport-https ntpdate; do
+        if pkg_available "$opt"; then
+            PKGS+=("$opt")
+        fi
+    done
+fi
+if [ "${ID}" = "debian" ]; then
+    for opt in "${OPTIONAL_PKGS[@]}"; do
+        if pkg_available "$opt"; then
+            PKGS+=("$opt")
+        fi
+    done
+fi
+
+# Drop any package without an installable candidate (e.g. removed in newer Debian).
+FILTERED=()
+for p in "${PKGS[@]}"; do
+    if pkg_available "$p"; then
+        FILTERED+=("$p")
+    else
+        echo "[WARN] Skipping unavailable package: $p"
+    fi
+done
+PKGS=("${FILTERED[@]}")
+
 DEBIAN_FRONTEND=noninteractive apt install -y "${PKGS[@]}"
 
 step 3 $TOTAL "Xray-Core"
