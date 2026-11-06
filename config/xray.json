@@ -21,7 +21,7 @@
             "settings": {
                 "clients": [
                     {
-                        "id": "60d9785f-0e59-4988-aee1-322351b4de7f",
+                        "id": "a0d9785f-0e59-4988-aee1-322351b4de7f",
                         "alterId": 0,
                         "level": 0,
                         "security": "auto",
@@ -44,7 +44,7 @@
             "settings": {
                 "clients": [
                     {
-                        "id": "60d9785f-0e59-4988-aee1-322351b4de7f",
+                        "id": "a0d9785f-0e59-4988-aee1-322351b4de7f",
                         "level": 0,
                         "email": "Admin-VLESS-WS"
                     }
@@ -66,7 +66,7 @@
             "settings": {
                 "clients": [
                     {
-                        "id": "60d9785f-0e59-4988-aee1-322351b4de7f",
+                        "id": "a0d9785f-0e59-4988-aee1-322351b4de7f",
                         "alterId": 0,
                         "level": 0,
                         "security": "auto",
@@ -89,7 +89,7 @@
             "settings": {
                 "clients": [
                     {
-                        "id": "60d9785f-0e59-4988-aee1-322351b4de7f",
+                        "id": "a0d9785f-0e59-4988-aee1-322351b4de7f",
                         "level": 0,
                         "email": "Admin-VLESS-GRPC"
                     }
@@ -111,7 +111,7 @@
             "settings": {
                 "clients": [
                     {
-                        "id": "60d9785f-0e59-4988-aee1-322351b4de7f",
+                        "id": "a0d9785f-0e59-4988-aee1-322351b4de7f",
                         "alterId": 0,
                         "level": 0,
                         "security": "auto",
@@ -134,7 +134,7 @@
             "settings": {
                 "clients": [
                     {
-                        "id": "60d9785f-0e59-4988-aee1-322351b4de7f",
+                        "id": "a0d9785f-0e59-4988-aee1-322351b4de7f",
                         "level": 0,
                         "email": "Admin-VLESS-HU"
                     }
