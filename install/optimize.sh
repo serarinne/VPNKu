@@ -10,6 +10,9 @@ SYSCTL_CONFIG="/etc/sysctl.conf"
 
 echo "[INFO] Starting TCP/network optimization..."
 
+# Ensure the sysctl config file exists (Debian 13 minimal images may not ship it)
+touch "$SYSCTL_CONFIG"
+
 set_sysctl_config() {
     local key="$1"
     local value="$2"
