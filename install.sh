@@ -52,13 +52,7 @@ if [ "${ID}" = "debian" ]; then
 fi
 
 TOTAL=8
-step 1 $TOTAL "Installing packages"
-apt-get remove --purge nginx* nginx-common* nginx-full* apache2* ufw* firewalld* exim4* -y >/dev/null 2>&1 || true
-apt autoremove -y >/dev/null 2>&1 || true
-apt update -y
-DEBIAN_FRONTEND=noninteractive apt install -y "${PKGS[@]}"
-
-step 2 $TOTAL "Server setup"
+step 1 $TOTAL "Server setup"
 read -rp "Server Name        : " SERVER_NAME
 read -rp "Server Domain      : " SERVER_DOMAIN
 mkdir -p /etc/vps-data
@@ -84,6 +78,12 @@ fetch() {
     exit 1
   fi
 }
+
+step 2 $TOTAL "Installing packages"
+apt-get remove --purge nginx* nginx-common* nginx-full* apache2* ufw* firewalld* exim4* -y >/dev/null 2>&1 || true
+apt autoremove -y >/dev/null 2>&1 || true
+apt update -y
+DEBIAN_FRONTEND=noninteractive apt install -y "${PKGS[@]}"
 
 step 3 $TOTAL "Xray-Core"
 fetch "https://raw.githubusercontent.com/serarinne/VPNKu/main/install/xray.sh" "install/xray.sh"
