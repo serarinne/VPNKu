@@ -43,12 +43,19 @@ fetch "$BASE/bot/telegram-bot.sh" "/opt/vpnku-bot/telegram-bot.sh"
 
 # Update config templates (not live config)
 fetch "$BASE/config/xray.json" "/opt/vpnku/config/xray.json" || true
-fetch "$BASE/config/haproxy.cfg" "/opt/vpnku/config/haproxy.cfg" || true
+fetch "$BASE/config/haproxy.cfg" "/etc/haproxy/haproxy.cfg" || true
 
 # Restart bot if running
 if systemctl is-active --quiet vpnku-bot 2>/dev/null; then
     systemctl restart vpnku-bot
     echo "[OK] Telegram bot restarted."
+fi
+
+# Restart HAProxy if running
+haproxy -c -f /etc/haproxy/haproxy.cfg
+if systemctl is-active --quiet haproxy 2>/dev/null; then
+    systemctl restart haproxy
+    echo "[OK] HAProxy restarted."
 fi
 
 echo "[OK] Update complete. Live Xray/HAProxy config not overwritten."
