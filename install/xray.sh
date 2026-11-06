@@ -8,7 +8,7 @@ fi
 DOMAIN=$(cat /etc/vps-data/domain)
 
 echo "[INFO] Starting Xray-Core installation & configuration..."
-bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install > /dev/null 2>&1
+bash -c "$(curl -4 -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install > /dev/null 2>&1
 
 mkdir -p /var/log/xray
 chown www-data:www-data /var/log/xray

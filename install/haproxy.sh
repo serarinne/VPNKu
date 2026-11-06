@@ -24,7 +24,7 @@ case "${ID:-}" in
     ;;
   debian)
     apt-get install -y curl gnupg lsb-release >/dev/null 2>&1
-    curl -fsSL https://haproxy.debian.net/bernat.debian.org.gpg | gpg --dearmor -o /usr/share/keyrings/haproxy.debian.net.gpg
+    curl -4 -fsSL https://haproxy.debian.net/bernat.debian.org.gpg | gpg --dearmor -o /usr/share/keyrings/haproxy.debian.net.gpg
     echo "deb [signed-by=/usr/share/keyrings/haproxy.debian.net.gpg] http://haproxy.debian.net $(lsb_release -cs)-backports-2.8 main" > /etc/apt/sources.list.d/haproxy.list
     ;;
   *)

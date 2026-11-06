@@ -87,11 +87,12 @@ VPNKu/
 apt update -y && apt upgrade -y && apt dist-upgrade -y && reboot
 
 # Install VPNKu
-cd /root && wget https://raw.githubusercontent.com/serarinne/VPNKu/main/install.sh && chmod +x install.sh && ./install.sh
+cd /root && wget --inet4-only https://raw.githubusercontent.com/serarinne/VPNKu/main/install.sh && chmod +x install.sh && ./install.sh
 ```
 
 During installation you will be asked for **Server Name** and **Server Domain**. At the end you may configure the Telegram bot.
 
+The installer keeps a checkpoint at `/etc/vps-data/install.checkpoint`. If installation is interrupted or fails, rerun `./install.sh` and completed steps will be skipped. To start over from step 1, run `./install.sh --reset`.
 ---
 
 ## Ports & Routing

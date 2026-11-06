@@ -24,7 +24,7 @@ WGCF_VERSION="2.2.20"
 WGCF_URL="https://github.com/ViRb3/wgcf/releases/download/v${WGCF_VERSION}/wgcf_${WGCF_VERSION}_linux_${WGCF_ARCH}"
 
 echo "[INFO] Downloading wgcf..."
-if ! wget -q "$WGCF_URL" -O wgcf; then
+if ! wget -q --inet4-only "$WGCF_URL" -O wgcf; then
     echo "[ERR] Failed to download wgcf."
     exit 1
 fi
