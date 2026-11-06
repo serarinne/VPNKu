@@ -11,6 +11,28 @@ echo "[INFO] Starting HAProxy installation & configuration..."
 
 apt-get remove --purge nginx* nginx-common* nginx-full* -y >/dev/null 2>&1 || true
 apt autoremove -y >/dev/null 2>&1 || true
+
+# Add the official HAProxy repository so the latest stable version is installed
+# (instead of the older version shipped by the OS repository).
+. /etc/os-release
+case "${ID:-}" in
+  ubuntu)
+    if ! command -v add-apt-repository >/dev/null 2>&1; then
+      apt-get install -y software-properties-common >/dev/null 2>&1
+    fi
+    add-apt-repository -y ppa:vbernat/haproxy-3.0 >/dev/null 2>&1
+    ;;
+  debian)
+    apt-get install -y curl gnupg lsb-release >/dev/null 2>&1
+    curl -fsSL https://haproxy.debian.net/bernat.debian.org.gpg | gpg --dearmor -o /usr/share/keyrings/haproxy.debian.net.gpg
+    echo "deb [signed-by=/usr/share/keyrings/haproxy.debian.net.gpg] http://haproxy.debian.net $(lsb_release -cs)-backports-2.8 main" > /etc/apt/sources.list.d/haproxy.list
+    ;;
+  *)
+    echo "[WARN] Unsupported OS (${ID:-unknown}); falling back to the OS repository version of HAProxy."
+    ;;
+esac
+
+apt-get update -y >/dev/null 2>&1 || true
 apt install haproxy -y >/dev/null 2>&1
 
 # Combine certificate and key into a single PEM file (HAProxy format)

@@ -319,20 +319,7 @@ check-optimize  # verify BBR & TCP tuning applied
 ## Version Notes
 
 - **Xray-Core**: follows the latest release (via official XTLS installer).
-- **HAProxy**: uses the version from the OS repository (stable, receives security patches from OS maintainers).
-
-To use the latest HAProxy version, add the official repository before running `install.sh`:
-
-```bash
-# Ubuntu
-add-apt-repository -y ppa:vbernat/haproxy-3.0
-
-# Debian
-curl -fsSL https://haproxy.debian.net/bernat.debian.org.gpg | gpg --dearmor -o /usr/share/keyrings/haproxy.debian.net.gpg
-echo "deb [signed-by=/usr/share/keyrings/haproxy.debian.net.gpg] http://haproxy.debian.net $(lsb_release -cs)-backports-2.8 main" > /etc/apt/sources.list.d/haproxy.list
-```
-
-Then run `apt update` and `install.sh`.
+- **HAProxy**: `install/haproxy.sh` now adds the official HAProxy repository automatically (Ubuntu PPA / Debian haproxy.debian.net) and installs the latest stable version. On unsupported OSes it falls back to the OS repository version.
 
 ---
 
